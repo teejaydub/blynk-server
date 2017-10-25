@@ -21,6 +21,7 @@ import cc.blynk.server.api.http.logic.business.AuthCookieHandler;
 import cc.blynk.server.api.websockets.handlers.WebSocketHandler;
 import cc.blynk.server.api.websockets.handlers.WebSocketWrapperEncoder;
 import cc.blynk.server.api.websockets.handlers.WebSocketsGenericLoginHandler;
+import cc.blynk.server.application.handlers.main.auth.RegisterHandler;
 import cc.blynk.server.core.protocol.handlers.DefaultExceptionHandler;
 import cc.blynk.server.core.protocol.handlers.decoders.MessageDecoder;
 import cc.blynk.server.core.protocol.handlers.encoders.MessageEncoder;
@@ -56,6 +57,7 @@ public class HttpAndWebSocketUnificatorHandler extends ChannelInboundHandlerAdap
     private final GlobalStats stats;
 
     private final WebSocketsGenericLoginHandler genericLoginHandler;
+    private final RegisterHandler registerHandler;
     private final String rootPath;
     private final IpFilterHandler ipFilterHandler;
     private final AuthCookieHandler authCookieHandler;
@@ -78,6 +80,7 @@ public class HttpAndWebSocketUnificatorHandler extends ChannelInboundHandlerAdap
         this.region = holder.region;
         this.stats = holder.stats;
         this.genericLoginHandler = new WebSocketsGenericLoginHandler(holder, port);
+        this.registerHandler = new RegisterHandler(holder);
         this.rootPath = rootPath;
         this.props = holder.props;
         this.ipFilterHandler = new IpFilterHandler(
@@ -182,6 +185,7 @@ public class HttpAndWebSocketUnificatorHandler extends ChannelInboundHandlerAdap
         pipeline.addLast("WSSocketWrapper", new WebSocketWrapperEncoder());
         pipeline.addLast("WSMessageEncoder", new MessageEncoder(stats));
         pipeline.addLast("WSWebSocketGenericLoginHandler", genericLoginHandler);
+        pipeline.addLast("ARegister", registerHandler);
         pipeline.remove(this);
         pipeline.remove(ChunkedWriteHandler.class);
         pipeline.remove(UrlReWriterHandler.class);
