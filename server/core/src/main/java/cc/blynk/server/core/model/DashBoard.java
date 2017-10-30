@@ -412,6 +412,7 @@ public class DashBoard {
         //do not update devices by purpose
         //this.devices = parent.devices;
         this.widgets = copyWidgets(parent.widgets);
+        this.updatedAt = parent.updatedAt;
     }
 
     private Widget[] copyWidgets(Widget[] widgetsToCopy) {
