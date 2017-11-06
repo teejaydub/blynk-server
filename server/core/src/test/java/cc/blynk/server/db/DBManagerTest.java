@@ -18,7 +18,6 @@ import cc.blynk.utils.DateTimeUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.postgresql.copy.CopyManager;
 import org.postgresql.core.BaseConnection;
@@ -87,7 +86,6 @@ public class DBManagerTest {
     }
 
     @Test
-    @Ignore("Ignoring because of travis CI")
     public void testDbVersion() throws Exception {
         int dbVersion = dbManager.userDBDao.getDBVersion();
         assertTrue(dbVersion >= 90500);
@@ -141,7 +139,6 @@ public class DBManagerTest {
     }
 
     @Test
-    @Ignore
     public void testCopy100RecordsIntoFile() throws Exception {
         System.out.println("Starting");
 
@@ -232,22 +229,20 @@ public class DBManagerTest {
     }
 
     @Test
-    @Ignore("Ignored cause travis postgres is old and doesn't support upserts")
     public void testUpsertForDifferentApps() throws Exception {
         ArrayList<User> users = new ArrayList<>();
-        users.add(new User("test1@gmail.com", "pass", "testapp2", "local", false, false));
-        users.add(new User("test1@gmail.com", "pass", "testapp1", "local", false, false));
+        users.add(new User("test1@gmail.com", "pass", "testapp2", "local", "127.0.0.1", false, false));
+        users.add(new User("test1@gmail.com", "pass", "testapp1", "local", "127.0.0.1", false, false));
         dbManager.userDBDao.save(users);
         ConcurrentMap<UserKey, User> dbUsers = dbManager.userDBDao.getAllUsers("local");
         assertEquals(2, dbUsers.size());
     }
 
     @Test
-    @Ignore("Ignored cause travis postgres is old and doesn't support upserts")
     public void testUpsertAndSelect() throws Exception {
         ArrayList<User> users = new ArrayList<>();
         for (int i = 0; i < 10000; i++) {
-            users.add(new User("test" + i + "@gmail.com", "pass", AppNameUtil.BLYNK, "local", false, false));
+            users.add(new User("test" + i + "@gmail.com", "pass", AppNameUtil.BLYNK, "local", "127.0.0.1", false, false));
         }
         //dbManager.saveUsers(users);
         dbManager.userDBDao.save(users);
@@ -257,22 +252,21 @@ public class DBManagerTest {
     }
 
     @Test
-    @Ignore("Ignored cause travis postgres is old and doesn't support upserts")
     public void testUpsertUser() throws Exception {
         ArrayList<User> users = new ArrayList<>();
-        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", false, false);
+        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", "127.0.0.1", false, false);
         user.name = "123";
         user.lastModifiedTs = 0;
         user.lastLoggedAt = 1;
         user.lastLoggedIP = "127.0.0.1";
         users.add(user);
-        user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", false, false);
+        user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", "127.0.0.1", false, false);
         user.lastModifiedTs = 0;
         user.lastLoggedAt = 1;
         user.lastLoggedIP = "127.0.0.1";
         user.name = "123";
         users.add(user);
-        user = new User("test2@gmail.com", "pass", AppNameUtil.BLYNK, "local", false, false);
+        user = new User("test2@gmail.com", "pass", AppNameUtil.BLYNK, "local", "127.0.0.1", false, false);
         user.lastModifiedTs = 0;
         user.lastLoggedAt = 1;
         user.lastLoggedIP = "127.0.0.1";
@@ -304,10 +298,9 @@ public class DBManagerTest {
     }
 
     @Test
-    @Ignore("Ignored cause travis postgres is old and doesn't support upserts")
     public void testUpsertUserFieldUpdated() throws Exception {
         ArrayList<User> users = new ArrayList<>();
-        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", false, false);
+        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", "127.0.0.1", false, false);
         user.lastModifiedTs = 0;
         user.lastLoggedAt = 1;
         user.lastLoggedIP = "127.0.0.1";
@@ -316,7 +309,7 @@ public class DBManagerTest {
         dbManager.userDBDao.save(users);
 
         users = new ArrayList<>();
-        user = new User("test@gmail.com", "pass2", AppNameUtil.BLYNK, "local2", true, true);
+        user = new User("test@gmail.com", "pass2", AppNameUtil.BLYNK, "local2", "127.0.0.1", true, true);
         user.name = "1234";
         user.lastModifiedTs = 1;
         user.lastLoggedAt = 2;
@@ -332,33 +325,30 @@ public class DBManagerTest {
 
         dbManager.userDBDao.save(users);
 
-        try (Connection connection = dbManager.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet rs = statement.executeQuery("select * from users where email = 'test@gmail.com'")) {
-            while (rs.next()) {
-                assertEquals("test@gmail.com", rs.getString("email"));
-                assertEquals(AppNameUtil.BLYNK, rs.getString("appName"));
-                assertEquals("local2", rs.getString("region"));
-                assertEquals("pass2", rs.getString("pass"));
-                assertEquals("1234", rs.getString("name"));
-                assertEquals(1, rs.getTimestamp("last_modified", DateTimeUtils.UTC_CALENDAR).getTime());
-                assertEquals(2, rs.getTimestamp("last_logged", DateTimeUtils.UTC_CALENDAR).getTime());
-                assertEquals("127.0.0.2", rs.getString("last_logged_ip"));
-                assertTrue(rs.getBoolean("is_facebook_user"));
-                assertTrue(rs.getBoolean("is_super_admin"));
-                assertEquals(1000, rs.getInt("energy"));
+        ConcurrentMap<UserKey, User>  persistent = dbManager.userDBDao.getAllUsers("local2");
 
-                assertEquals("{\"dashBoards\":[{\"id\":1,\"name\":\"123\",\"createdAt\":0,\"updatedAt\":0,\"theme\":\"Blynk\",\"keepScreenOn\":false,\"isAppConnectedOn\":false,\"isShared\":false,\"isActive\":false}]}", rs.getString("json"));
-            }
-            connection.commit();
-        }
+        user = persistent.get(new UserKey("test@gmail.com", AppNameUtil.BLYNK));
+
+        assertEquals("test@gmail.com", user.email);
+        assertEquals(AppNameUtil.BLYNK, user.appName);
+        assertEquals("local2", user.region);
+        assertEquals("pass2", user.pass);
+        assertEquals("1234", user.name);
+        assertEquals("127.0.0.1", user.ip);
+        assertEquals(1, user.lastModifiedTs);
+        assertEquals(2, user.lastLoggedAt);
+        assertEquals("127.0.0.2", user.lastLoggedIP);
+        assertTrue(user.isFacebookUser);
+        assertTrue(user.isSuperAdmin);
+        assertEquals(1000, user.energy);
+
+        assertEquals("{\"dashBoards\":[{\"id\":1,\"parentId\":-1,\"isPreview\":false,\"name\":\"123\",\"createdAt\":0,\"updatedAt\":0,\"theme\":\"Blynk\",\"keepScreenOn\":false,\"isAppConnectedOn\":false,\"isShared\":false,\"isActive\":false}]}", user.profile.toString());
     }
 
     @Test
-    @Ignore("Ignored cause travis postgres is old and doesn't support upserts")
     public void testInsertAndGetUser() throws Exception {
         ArrayList<User> users = new ArrayList<>();
-        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", true, true);
+        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", "127.0.0.1", true, true);
         user.lastModifiedTs = 0;
         user.lastLoggedAt = 1;
         user.lastLoggedIP = "127.0.0.1";
@@ -393,10 +383,9 @@ public class DBManagerTest {
     }
 
     @Test
-    @Ignore("Ignored cause travis postgres is old and doesn't support upserts")
     public void testInsertGetDeleteUser() throws Exception {
         ArrayList<User> users = new ArrayList<>();
-        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", true, true);
+        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", "127.0.0.1", true, true);
         user.lastModifiedTs = 0;
         user.lastLoggedAt = 1;
         user.lastLoggedIP = "127.0.0.1";
@@ -512,4 +501,24 @@ public class DBManagerTest {
         dbManager.reportingDBDao.cleanOldReportingRecords(Instant.now());
     }
 
+    @Test
+    public void getUserIpNotExists() throws Exception {
+        String userIp = dbManager.userDBDao.getUserServerIp("test@gmail.com", AppNameUtil.BLYNK);
+        assertNull(userIp);
+    }
+
+    @Test
+    public void getUserIp() throws Exception {
+        ArrayList<User> users = new ArrayList<>();
+        User user = new User("test@gmail.com", "pass", AppNameUtil.BLYNK, "local", "127.0.0.1", false, false);
+        user.lastModifiedTs = 0;
+        user.lastLoggedAt = 1;
+        user.lastLoggedIP = "127.0.0.1";
+        users.add(user);
+
+        dbManager.userDBDao.save(users);
+
+        String userIp = dbManager.userDBDao.getUserServerIp("test@gmail.com", AppNameUtil.BLYNK);
+        assertEquals("127.0.0.1", userIp);
+    }
 }

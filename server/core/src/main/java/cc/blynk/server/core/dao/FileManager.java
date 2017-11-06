@@ -53,8 +53,9 @@ public class FileManager {
     private Path deletedDataDir;
     private Path backupDataDir;
     private String cloneDataDir;
+    private final String host;
 
-    public FileManager(String dataFolder) {
+    public FileManager(String dataFolder, String host) {
         if (dataFolder == null || dataFolder.isEmpty() || dataFolder.equals("/path")) {
             System.out.println("WARNING : '" + dataFolder + "' does not exists. "
                     + "Please specify correct -dataFolder parameter.");
@@ -88,6 +89,7 @@ public class FileManager {
             }
         }
 
+        this.host = host;
         log.info("Using data dir '{}'", dataDir);
     }
 
@@ -198,10 +200,11 @@ public class FileManager {
         return Stream.empty();
     }
 
-    public static void makeProfileChanges(User user) {
+    public void makeProfileChanges(User user) {
         if (user.email == null) {
             user.email = user.name;
         }
+        user.ip = host;
         for (DashBoard dashBoard : user.profile.dashBoards) {
             if (dashBoard.devices != null) {
                 for (Device device : dashBoard.devices) {
@@ -240,11 +243,11 @@ public class FileManager {
     }
 
     public String readClonedProjectFromDisk(String token) {
+        Path path = Paths.get(cloneDataDir, token);
         try {
-            Path path = Paths.get(cloneDataDir, token);
             return new String(Files.readAllBytes(path), StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.warn("Didn't find cloned project on disk. {}", e.getMessage());
+            log.warn("Didn't find cloned project on disk. Path {}. Reason {}", path.toString(), e.getMessage());
         }
         return null;
     }

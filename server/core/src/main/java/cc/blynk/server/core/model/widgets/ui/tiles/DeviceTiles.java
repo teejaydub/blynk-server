@@ -88,6 +88,19 @@ public class DeviceTiles extends Widget implements AppSyncWidget {
         throw new IllegalCommandException("Tile template with passed id not found.");
     }
 
+    public Widget getWidgetById(long widgetId) {
+        for (TileTemplate tileTemplate : templates) {
+            if (tileTemplate.widgets != null) {
+                for (Widget widget : tileTemplate.widgets) {
+                    if (widget.id == widgetId) {
+                        return widget;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean updateIfSame(int deviceId, byte pin, PinType pinType, String value) {
         for (DeviceTile deviceTile : tiles) {
@@ -101,12 +114,10 @@ public class DeviceTiles extends Widget implements AppSyncWidget {
     @Override
     public void sendAppSync(Channel appChannel, int dashId, int targetId) {
         for (DeviceTile tile : tiles) {
-            if (tile.deviceId == targetId && tile.dataStream != null) {
+            if (tile.deviceId == targetId && tile.dataStream != null && tile.dataStream.notEmpty()) {
                 String hardBody = tile.dataStream.makeHardwareBody();
-                if (hardBody != null) {
-                    String body = prependDashIdAndDeviceId(dashId, targetId, hardBody);
-                    appChannel.write(makeUTF8StringMessage(APP_SYNC, SYNC_DEFAULT_MESSAGE_ID, body));
-                }
+                String body = prependDashIdAndDeviceId(dashId, targetId, hardBody);
+                appChannel.write(makeUTF8StringMessage(APP_SYNC, SYNC_DEFAULT_MESSAGE_ID, body));
             }
         }
     }

@@ -17,7 +17,7 @@ public class GraphDataStream {
 
     private final int color;
 
-    public final int targetId;
+    private final int targetId;
 
     @JsonProperty("pin") //todo "pin" for back compatibility
     public final DataStream dataStream;
@@ -35,6 +35,8 @@ public class GraphDataStream {
     private final int yAxisMin;
 
     private final int yAxisMax;
+
+    private final boolean showYAxis;
 
     private final String suffix;
 
@@ -57,6 +59,7 @@ public class GraphDataStream {
                            @JsonProperty("mathFormula") String mathFormula,
                            @JsonProperty("yAxisMin") int yAxisMin,
                            @JsonProperty("yAxisMax") int yAxisMax,
+                           @JsonProperty("showYAxis") boolean showYAxis,
                            @JsonProperty("suffix") String suffix,
                            @JsonProperty("cubicSmoothingEnabled") boolean cubicSmoothingEnabled,
                            @JsonProperty("connectMissingPointsEnabled") boolean connectMissingPointsEnabled,
@@ -73,9 +76,14 @@ public class GraphDataStream {
         this.mathFormula = mathFormula;
         this.yAxisMin = yAxisMin;
         this.yAxisMax = yAxisMax;
+        this.showYAxis = showYAxis;
         this.suffix = suffix;
         this.cubicSmoothingEnabled = cubicSmoothingEnabled;
         this.connectMissingPointsEnabled = connectMissingPointsEnabled;
         this.isPercentMaxMin = isPercentMaxMin;
+    }
+
+    public int getTargetId(int targetIdOverride) {
+        return targetIdOverride == -1 ? this.targetId : targetIdOverride;
     }
 }

@@ -86,30 +86,31 @@ public class Holder implements Closeable {
         this.host = serverProperties.getServerHost();
 
         String dataFolder = serverProperties.getProperty("data.folder");
-        this.fileManager = new FileManager(dataFolder);
+        this.fileManager = new FileManager(dataFolder, host);
         this.sessionDao = new SessionDao();
         this.blockingIOProcessor = new BlockingIOProcessor(
                 serverProperties.getIntProperty("blocking.processor.thread.pool.limit", 6),
-                serverProperties.getIntProperty("notifications.queue.limit", 5000)
+                serverProperties.getIntProperty("notifications.queue.limit", 2000)
         );
         this.dbManager = new DBManager(blockingIOProcessor, serverProperties.getBoolProperty("enable.db"));
 
         if (restore) {
             try {
-                this.userDao = new UserDao(dbManager.userDBDao.getAllUsers(this.region), this.region);
+                this.userDao = new UserDao(dbManager.userDBDao.getAllUsers(this.region), this.region, host);
             } catch (Exception e) {
                 System.out.println("Error restoring data from DB!");
                 e.printStackTrace();
                 throw new RuntimeException(e);
             }
         } else {
-            this.userDao = new UserDao(fileManager.deserializeUsers(), this.region);
+            this.userDao = new UserDao(fileManager.deserializeUsers(), this.region, host);
         }
 
         this.tokenManager = new TokenManager(this.userDao.users, blockingIOProcessor, dbManager, host);
         this.stats = new GlobalStats();
         final String reportingFolder = getReportingFolder(dataFolder);
-        this.reportingDao = new ReportingDao(reportingFolder, serverProperties);
+        this.reportingDao = new ReportingDao(reportingFolder,
+                serverProperties.isRawDBEnabled() && dbManager.isDBEnabled());
 
         this.transportTypeHolder = new TransportTypeHolder(serverProperties);
 
@@ -151,19 +152,20 @@ public class Holder implements Closeable {
         this.host = serverProperties.getServerHost();
 
         String dataFolder = serverProperties.getProperty("data.folder");
-        this.fileManager = new FileManager(dataFolder);
+        this.fileManager = new FileManager(dataFolder, host);
         this.sessionDao = new SessionDao();
-        this.userDao = new UserDao(fileManager.deserializeUsers(), this.region);
+        this.userDao = new UserDao(fileManager.deserializeUsers(), this.region, host);
         this.blockingIOProcessor = new BlockingIOProcessor(
                 serverProperties.getIntProperty("blocking.processor.thread.pool.limit", 5),
-                serverProperties.getIntProperty("notifications.queue.limit", 10000)
+                serverProperties.getIntProperty("notifications.queue.limit", 2000)
         );
 
         this.dbManager = new DBManager(dbFileName, blockingIOProcessor, serverProperties.getBoolProperty("enable.db"));
         this.tokenManager = new TokenManager(this.userDao.users, blockingIOProcessor, dbManager, host);
         this.stats = new GlobalStats();
         final String reportingFolder = getReportingFolder(dataFolder);
-        this.reportingDao = new ReportingDao(reportingFolder, serverProperties);
+        this.reportingDao = new ReportingDao(reportingFolder,
+                serverProperties.isRawDBEnabled() && dbManager.isDBEnabled());
 
         this.transportTypeHolder = new TransportTypeHolder(serverProperties);
 
