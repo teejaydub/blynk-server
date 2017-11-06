@@ -166,7 +166,7 @@ public class DBManagerTest {
 
 
         try (Connection connection = dbManager.getConnection();
-             Writer gzipWriter = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File("/home/doom369/output.csv.gz"))), "UTF-8")) {
+            Writer gzipWriter = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(new File("/tmp/output.csv.gz"))), "UTF-8")) {
 
             CopyManager copyManager = new CopyManager(connection.unwrap(BaseConnection.class));
 
