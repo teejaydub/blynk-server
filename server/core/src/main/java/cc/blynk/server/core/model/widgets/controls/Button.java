@@ -1,5 +1,7 @@
 package cc.blynk.server.core.model.widgets.controls;
 
+import cc.blynk.server.core.model.enums.PinMode;
+import cc.blynk.server.core.model.enums.WidgetProperty;
 import cc.blynk.server.core.model.widgets.OnePinWidget;
 
 /**
@@ -16,8 +18,16 @@ public class Button extends OnePinWidget {
     public volatile String offLabel;
 
     @Override
-    public String getModeType() {
-        return "out";
+    public String makeHardwareBody() {
+        if (isNotValid() || value == null) {
+            return null;
+        }
+        return makeHardwareBody(pinType, pin, value);
+    }
+
+    @Override
+    public PinMode getModeType() {
+        return PinMode.out;
     }
 
     @Override
@@ -26,12 +36,12 @@ public class Button extends OnePinWidget {
     }
 
     @Override
-    public void setProperty(String property, String propertyValue) {
+    public void setProperty(WidgetProperty property, String propertyValue) {
         switch (property) {
-            case "onLabel" :
+            case ON_LABEL :
                 this.onLabel = propertyValue;
                 break;
-            case "offLabel" :
+            case OFF_LABEL :
                 this.offLabel = propertyValue;
                 break;
             default:

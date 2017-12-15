@@ -1,8 +1,7 @@
 package cc.blynk.server.core.model.widgets.controls;
 
-import cc.blynk.server.core.model.serialization.JsonParser;
+import cc.blynk.server.core.model.enums.PinMode;
 import cc.blynk.server.core.model.widgets.OnePinWidget;
-import cc.blynk.utils.StringUtils;
 import io.netty.channel.ChannelHandlerContext;
 
 import static cc.blynk.server.core.protocol.enums.Command.HARDWARE;
@@ -55,23 +54,8 @@ public class Timer extends OnePinWidget {
     }
 
     @Override
-    public String getJsonValue() {
-        if (value == null) {
-            return "[]";
-        }
-
-        //todo back compatibility. remove this later.
-        if (value.contains(StringUtils.BODY_SEPARATOR_STRING)) {
-            String[] values = StringUtils.split3(value);
-            return JsonParser.valueToJsonAsString(values[2]);
-        } else {
-            return JsonParser.valueToJsonAsString(value);
-        }
-    }
-
-    @Override
-    public String getModeType() {
-        return "out";
+    public PinMode getModeType() {
+        return PinMode.out;
     }
 
     @Override

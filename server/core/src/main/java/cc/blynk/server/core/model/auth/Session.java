@@ -1,6 +1,6 @@
 package cc.blynk.server.core.model.auth;
 
-import cc.blynk.server.core.protocol.model.messages.ResponseWithBodyMessage;
+import cc.blynk.server.core.protocol.model.messages.appllication.DeviceOfflineMessage;
 import cc.blynk.server.core.session.HardwareStateHolder;
 import cc.blynk.server.core.stats.metrics.InstanceLoadMeter;
 import cc.blynk.server.handlers.BaseSimpleChannelInboundHandler;
@@ -16,8 +16,6 @@ import org.apache.logging.log4j.Logger;
 import java.util.HashSet;
 import java.util.Set;
 
-import static cc.blynk.server.core.protocol.enums.Command.RESPONSE;
-import static cc.blynk.server.core.protocol.enums.Response.DEVICE_WENT_OFFLINE;
 import static cc.blynk.server.internal.BlynkByteBufUtil.makeUTF8StringMessage;
 import static cc.blynk.server.internal.StateHolderUtil.getHardState;
 import static cc.blynk.server.internal.StateHolderUtil.isSameDash;
@@ -155,30 +153,52 @@ public class Session {
         return false;
     }
 
-    public void sendOfflineMessageToApps(int dashId) {
+    public void sendOfflineMessageToApps(int dashId, int deviceId) {
         if (isAppConnected()) {
             log.trace("Sending device offline message.");
-            ResponseWithBodyMessage response = new ResponseWithBodyMessage(0, RESPONSE, DEVICE_WENT_OFFLINE, dashId);
+
+            //todo could be optimized. don't forget about retain
+            DeviceOfflineMessage deviceOfflineMessage =
+                    new DeviceOfflineMessage(0, String.valueOf(dashId) + DEVICE_SEPARATOR + deviceId);
             for (Channel appChannel : appChannels) {
                 if (appChannel.isWritable()) {
-                    appChannel.writeAndFlush(response, appChannel.voidPromise());
+                    appChannel.writeAndFlush(deviceOfflineMessage, appChannel.voidPromise());
                 }
             }
         }
     }
 
     public void sendToApps(short cmd, int msgId, int dashId, int deviceId) {
-        int targetsNum = appChannels.size();
-        if (targetsNum > 0) {
-            send(appChannels, targetsNum, cmd, msgId, "" + dashId + DEVICE_SEPARATOR + deviceId);
+        if (isAppConnected()) {
+            String finalBody = "" + dashId + DEVICE_SEPARATOR + deviceId;
+            sendToApps(cmd, msgId, dashId, finalBody);
         }
     }
 
     public void sendToApps(short cmd, int msgId, int dashId, int deviceId, String body) {
-        int targetsNum = appChannels.size();
-        if (targetsNum > 0) {
-            send(appChannels, targetsNum, cmd, msgId, prependDashIdAndDeviceId(dashId, deviceId, body));
+        if (isAppConnected()) {
+            String finalBody = prependDashIdAndDeviceId(dashId, deviceId, body);
+            sendToApps(cmd, msgId, dashId, finalBody);
         }
+    }
+
+    private void sendToApps(short cmd, int msgId, int dashId, String finalBody) {
+        Set<Channel> targetChannels = filterByDash(dashId);
+
+        int targetsNum = targetChannels.size();
+        if (targetsNum > 0) {
+            send(targetChannels, targetsNum, cmd, msgId, finalBody);
+        }
+    }
+
+    private Set<Channel> filterByDash(int dashId) {
+        Set<Channel> targetChannels = new HashSet<>();
+        for (Channel channel : appChannels) {
+            if (isSameDash(channel, dashId)) {
+                targetChannels.add(channel);
+            }
+        }
+        return targetChannels;
     }
 
     private void send(Set<Channel> targets, int targetsNum, short cmd, int msgId, String body) {

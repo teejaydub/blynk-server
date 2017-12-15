@@ -23,27 +23,18 @@ public interface DefaultExceptionHandler {
 
     Logger log = LogManager.getLogger(DefaultExceptionHandler.class);
 
-    default void handleGeneralException(ChannelHandlerContext ctx, Throwable cause, int msgId) {
-        if (cause instanceof BaseServerException) {
-            BaseServerException baseServerException = (BaseServerException) cause;
-            log.debug(baseServerException.getMessage());
-            if (ctx.channel().isWritable()) {
-                ctx.writeAndFlush(makeResponse(msgId, baseServerException.errorCode), ctx.voidPromise());
-            }
-        } else {
-            handleUnexpectedException(ctx, cause);
+    default void handleBaseServerException(ChannelHandlerContext ctx,
+                                           BaseServerException baseServerException, int msgId) {
+        log.debug(baseServerException.getMessage());
+        if (ctx.channel().isWritable()) {
+            ctx.writeAndFlush(makeResponse(msgId, baseServerException.errorCode), ctx.voidPromise());
         }
     }
 
     default void handleGeneralException(ChannelHandlerContext ctx, Throwable cause) {
         if (cause instanceof BaseServerException) {
             BaseServerException baseServerException = (BaseServerException) cause;
-            //no need for stack trace for known exceptions
-            log.debug(baseServerException.getMessage());
-            if (ctx.channel().isWritable()) {
-                ctx.writeAndFlush(makeResponse(baseServerException.msgId, baseServerException.errorCode),
-                        ctx.voidPromise());
-            }
+            handleBaseServerException(ctx, baseServerException, baseServerException.msgId);
         } else {
             handleUnexpectedException(ctx, cause);
         }
@@ -78,8 +69,8 @@ public interface DefaultExceptionHandler {
             if (message != null && message.contains("OutOfDirectMemoryError")) {
                 log.error("OutOfDirectMemoryError!!!");
             } else {
-                log.error("Unexpected error! Handler class : {}. Name : {}. Reason : {}",
-                        ctx.handler().getClass(), ctx.name(), message);
+                log.error("Unexpected error! Handler class : {}. Name : {}. Reason : {}. Channel : {}.",
+                        ctx.handler().getClass(), ctx.name(), message, ctx.channel());
                 log.debug(cause);
             }
         }

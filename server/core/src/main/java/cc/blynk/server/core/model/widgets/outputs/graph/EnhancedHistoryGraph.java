@@ -1,5 +1,6 @@
 package cc.blynk.server.core.model.widgets.outputs.graph;
 
+import cc.blynk.server.core.model.enums.PinMode;
 import cc.blynk.server.core.model.enums.PinType;
 import cc.blynk.server.core.model.widgets.Widget;
 import cc.blynk.server.core.model.widgets.outputs.TextAlignment;
@@ -39,34 +40,22 @@ public class EnhancedHistoryGraph extends Widget {
 
     public GoalLine goalLine;
 
-    @Override
-    public boolean updateIfSame(int deviceId, byte pin, PinType type, String value) {
+    //actually it is duplicated logic of isSame method, but isSame is used in other places
+    public boolean hasPin(int deviceId, byte pin, PinType pinType) {
+        for (GraphDataStream graphDataStream : dataStreams) {
+            if (graphDataStream.targetId == deviceId
+                    && graphDataStream.dataStream != null
+                    && graphDataStream.dataStream.isSame(pin, pinType)) {
+                return true;
+            }
+        }
         return false;
     }
 
     @Override
-    public void updateIfSame(Widget widget) {
-
-    }
-
-    @Override
-    public boolean isSame(int deviceId, byte pin, PinType type) {
-        return false;
-    }
-
-    @Override
-    public String getJsonValue() {
+    //do not performs any direct pin operations
+    public PinMode getModeType() {
         return null;
-    }
-
-    @Override
-    public String getModeType() {
-        return null;
-    }
-
-    @Override
-    public void append(StringBuilder sb, int deviceId) {
-
     }
 
     @Override

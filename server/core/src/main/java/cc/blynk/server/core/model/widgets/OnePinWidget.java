@@ -2,8 +2,10 @@ package cc.blynk.server.core.model.widgets;
 
 import cc.blynk.server.core.model.DataStream;
 import cc.blynk.server.core.model.enums.PinType;
+import cc.blynk.server.core.model.enums.WidgetProperty;
 import cc.blynk.server.core.model.serialization.JsonParser;
 import cc.blynk.server.core.model.widgets.ui.DeviceSelector;
+import cc.blynk.utils.NumberUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -65,7 +67,7 @@ public abstract class OnePinWidget extends Widget implements AppSyncWidget, Hard
         if (isNotValid() || value == null) {
             return null;
         }
-        return isPWMSupported() ? makeHardwareBody(PinType.ANALOG, pin, value) : makeHardwareBody(pinType, pin, value);
+        return pwmMode ? makeHardwareBody(PinType.ANALOG, pin, value) : makeHardwareBody(pinType, pin, value);
     }
 
     @Override
@@ -78,14 +80,6 @@ public abstract class OnePinWidget extends Widget implements AppSyncWidget, Hard
     }
 
     @Override
-    public void updateIfSame(Widget widget) {
-        if (widget instanceof OnePinWidget) {
-            OnePinWidget onePinWidget = (OnePinWidget) widget;
-            updateIfSame(onePinWidget.deviceId, onePinWidget.pin, onePinWidget.pinType, onePinWidget.value);
-        }
-    }
-
-    @Override
     public void sendHardSync(ChannelHandlerContext ctx, int msgId, int deviceId) {
         if (this.deviceId == deviceId) {
             String body = makeHardwareBody();
@@ -95,12 +89,11 @@ public abstract class OnePinWidget extends Widget implements AppSyncWidget, Hard
         }
     }
 
-    //todo cover with test
     @Override
     public boolean isSame(int deviceId, byte pin, PinType type) {
         return this.deviceId == deviceId && this.pin == pin && (
                 (type == this.pinType)
-                        || (this.isPWMSupported() && type == PinType.ANALOG)
+                        || (this.pwmMode && type == PinType.ANALOG)
                         || (type == PinType.DIGITAL && this.pinType == PinType.ANALOG)
         );
     }
@@ -116,24 +109,20 @@ public abstract class OnePinWidget extends Widget implements AppSyncWidget, Hard
     @Override
     public void append(StringBuilder sb, int deviceId) {
         if (this.deviceId == deviceId) {
-            append(sb, pin, pinType, getModeType());
+            append(sb, pin, pinType);
         }
     }
 
-    public boolean isPWMSupported() {
-        return false;
-    }
-
     @Override
-    public void setProperty(String property, String propertyValue) {
+    public void setProperty(WidgetProperty property, String propertyValue) {
         switch (property) {
-            case "min" :
+            case MIN :
                 //accepting floats as valid, but using int for min/max due to back compatibility
-                this.min = (int) Float.parseFloat(propertyValue);
+                this.min = (int) NumberUtil.parseDoubleOrThrow(propertyValue);
                 break;
-            case "max" :
+            case MAX :
                 //accepting floats as valid, but using int for min/max due to back compatibility
-                this.max = (int) Float.parseFloat(propertyValue);
+                this.max = (int) NumberUtil.parseDoubleOrThrow(propertyValue);
                 break;
             default:
                 super.setProperty(property, propertyValue);

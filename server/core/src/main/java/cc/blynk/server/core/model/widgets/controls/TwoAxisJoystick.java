@@ -1,17 +1,15 @@
 package cc.blynk.server.core.model.widgets.controls;
 
 import cc.blynk.server.core.model.DataStream;
+import cc.blynk.server.core.model.enums.PinMode;
 import cc.blynk.server.core.model.widgets.HardwareSyncWidget;
 import cc.blynk.server.core.model.widgets.MultiPinWidget;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 
-import java.util.StringJoiner;
-
 import static cc.blynk.server.core.protocol.enums.Command.APP_SYNC;
 import static cc.blynk.server.core.protocol.enums.Command.HARDWARE;
 import static cc.blynk.server.internal.BlynkByteBufUtil.makeUTF8StringMessage;
-import static cc.blynk.utils.StringUtils.BODY_SEPARATOR_STRING;
 import static cc.blynk.utils.StringUtils.prependDashIdAndDeviceId;
 
 /**
@@ -26,6 +24,8 @@ public class TwoAxisJoystick extends MultiPinWidget implements HardwareSyncWidge
     public boolean autoReturnOn;
 
     public boolean portraitLocked;
+
+    public int frequency;
 
     @Override
     public void sendHardSync(ChannelHandlerContext ctx, int msgId, int deviceId) {
@@ -71,32 +71,13 @@ public class TwoAxisJoystick extends MultiPinWidget implements HardwareSyncWidge
         }
     }
 
-    @Override
-    public String getJsonValue() {
-        if (dataStreams == null) {
-            return "[]";
-        }
-
-        if (isSplitMode()) {
-            return super.getJsonValue();
-        } else {
-            StringJoiner sj = new StringJoiner(",", "[", "]");
-            if (dataStreams[0].notEmpty()) {
-                for (String pinValue : dataStreams[0].value.split(BODY_SEPARATOR_STRING)) {
-                    sj.add("\"" + pinValue + "\"");
-                }
-            }
-            return sj.toString();
-        }
-    }
-
     public boolean isSplitMode() {
         return split;
     }
 
     @Override
-    public String getModeType() {
-        return "out";
+    public PinMode getModeType() {
+        return PinMode.out;
     }
 
 

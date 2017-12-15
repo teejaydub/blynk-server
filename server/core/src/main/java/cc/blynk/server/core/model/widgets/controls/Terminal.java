@@ -1,5 +1,6 @@
 package cc.blynk.server.core.model.widgets.controls;
 
+import cc.blynk.server.core.model.enums.PinMode;
 import cc.blynk.server.core.model.enums.PinType;
 import cc.blynk.server.core.model.widgets.OnePinWidget;
 import cc.blynk.server.internal.ParseUtil;
@@ -53,14 +54,15 @@ public class Terminal extends OnePinWidget {
         if (isNotValid() || lastCommands.size() == 0) {
             return null;
         }
-        return isPWMSupported()
+        return pwmMode
                 ? makeHardwareBody(PinType.ANALOG, pin, lastCommands.getLast())
                 : makeHardwareBody(pinType, pin, lastCommands.getLast());
     }
 
     @Override
-    public String getModeType() {
-        return "in";
+    //terminal supports only virtual pins
+    public PinMode getModeType() {
+        return null;
     }
 
     @Override

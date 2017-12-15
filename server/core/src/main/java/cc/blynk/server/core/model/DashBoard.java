@@ -5,6 +5,7 @@ import cc.blynk.server.core.model.device.Device;
 import cc.blynk.server.core.model.device.Tag;
 import cc.blynk.server.core.model.enums.PinType;
 import cc.blynk.server.core.model.enums.Theme;
+import cc.blynk.server.core.model.enums.WidgetProperty;
 import cc.blynk.server.core.model.serialization.JsonParser;
 import cc.blynk.server.core.model.widgets.AppSyncWidget;
 import cc.blynk.server.core.model.widgets.MultiPinWidget;
@@ -15,6 +16,7 @@ import cc.blynk.server.core.model.widgets.controls.Timer;
 import cc.blynk.server.core.model.widgets.notifications.Notification;
 import cc.blynk.server.core.model.widgets.others.eventor.Eventor;
 import cc.blynk.server.core.model.widgets.others.webhook.WebHook;
+import cc.blynk.server.core.model.widgets.outputs.graph.EnhancedHistoryGraph;
 import cc.blynk.server.core.model.widgets.ui.DeviceSelector;
 import cc.blynk.server.core.protocol.exceptions.IllegalCommandException;
 import cc.blynk.server.internal.ParseUtil;
@@ -68,6 +70,8 @@ public class DashBoard {
 
     public volatile boolean isAppConnectedOn;
 
+    public volatile boolean isNotificationsOff;
+
     public volatile boolean isShared;
 
     public volatile boolean isActive;
@@ -97,14 +101,14 @@ public class DashBoard {
     }
 
     public void putPinPropertyStorageValue(int deviceId, PinType type, byte pin, String property, String value) {
-        puntPinStorageValue(new PinPropertyStorageKey(deviceId, type, pin, property), value);
+        putPinStorageValue(new PinPropertyStorageKey(deviceId, type, pin, property), value);
     }
 
     private void putPinStorageValue(int deviceId, PinType type, byte pin, String value) {
-        puntPinStorageValue(new PinStorageKey(deviceId, type, pin), value);
+        putPinStorageValue(new PinStorageKey(deviceId, type, pin), value);
     }
 
-    private void puntPinStorageValue(PinStorageKey key, String value) {
+    private void putPinStorageValue(PinStorageKey key, String value) {
         if (pinsStorage == Collections.EMPTY_MAP) {
             pinsStorage = new HashMap<>();
         }
@@ -122,8 +126,8 @@ public class DashBoard {
     }
 
     public Widget findWidgetByPin(int deviceId, String[] splitted) {
-        final PinType type = PinType.getPinType(splitted[0].charAt(0));
-        final byte pin = ParseUtil.parseByte(splitted[1]);
+        PinType type = PinType.getPinType(splitted[0].charAt(0));
+        byte pin = ParseUtil.parseByte(splitted[1]);
         return findWidgetByPin(deviceId, pin, type);
     }
 
@@ -146,6 +150,17 @@ public class DashBoard {
             }
         }
         return null;
+    }
+
+    public boolean needRawDataForGraph(int deviceId, byte pin, PinType pinType) {
+        for (Widget widget : widgets) {
+            if (widget instanceof EnhancedHistoryGraph) {
+                if (((EnhancedHistoryGraph) widget).hasPin(deviceId, pin, pinType)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public int getWidgetIndexByIdOrThrow(long id) {
@@ -232,10 +247,11 @@ public class DashBoard {
         return null;
     }
 
-    public  <T> T getWidgetByType(Class<T> clazz) {
+    @SuppressWarnings("unchecked")
+    public <T> T getWidgetByType(Class<T> clazz) {
         for (Widget widget : widgets) {
             if (clazz.isInstance(widget)) {
-                return clazz.cast(widget);
+                return (T) widget;
             }
         }
         return null;
@@ -298,10 +314,6 @@ public class DashBoard {
         }
     }
 
-    public void cleanPinStorage(Widget widget) {
-        cleanPinStorage(widget, false);
-    }
-
     public void cleanPinStorage(Widget widget, boolean removePropertiesToo) {
         if (widget instanceof OnePinWidget) {
             OnePinWidget onePinWidget = (OnePinWidget) widget;
@@ -328,20 +340,13 @@ public class DashBoard {
     }
 
     private void cleanPropertyStorageForTarget(int widgetDeviceId, PinType pinType, byte pin) {
-        try {
-            Target target = getTagById(widgetDeviceId);
-            if (target == null) {
-                target = getDeviceSelector(widgetDeviceId);
-            }
-            if (target != null) {
-                for (int deviceId : target.getDeviceIds()) {
-                    pinsStorage.remove(new PinPropertyStorageKey(deviceId, pinType, pin, "label"));
-                    pinsStorage.remove(new PinPropertyStorageKey(deviceId, pinType, pin, "onLabel"));
-                    pinsStorage.remove(new PinPropertyStorageKey(deviceId, pinType, pin, "offLabel"));
+        Target target = getTarget(widgetDeviceId);
+        if (target != null) {
+            for (int deviceId : target.getDeviceIds()) {
+                for (WidgetProperty widgetProperty : WidgetProperty.values()) {
+                    pinsStorage.remove(new PinPropertyStorageKey(deviceId, pinType, pin, widgetProperty.label));
                 }
             }
-        } catch (IllegalCommandException e) {
-            //that's fine. ignore
         }
     }
 
@@ -373,6 +378,7 @@ public class DashBoard {
         this.theme = settings.theme;
         this.keepScreenOn = settings.keepScreenOn;
         this.isAppConnectedOn = settings.isAppConnectedOn;
+        this.isNotificationsOff = settings.isNotificationsOff;
         this.updatedAt = System.currentTimeMillis();
     }
 
@@ -382,6 +388,7 @@ public class DashBoard {
         this.theme = updatedDashboard.theme;
         this.keepScreenOn = updatedDashboard.keepScreenOn;
         this.isAppConnectedOn = updatedDashboard.isAppConnectedOn;
+        this.isNotificationsOff = updatedDashboard.isNotificationsOff;
 
         Notification newNotification = updatedDashboard.getWidgetByType(Notification.class);
         if (newNotification != null) {
@@ -395,7 +402,7 @@ public class DashBoard {
         this.widgets = updatedDashboard.widgets;
 
         for (Widget widget : widgets) {
-            cleanPinStorage(widget);
+            cleanPinStorage(widget, false);
         }
 
         this.updatedAt = System.currentTimeMillis();
@@ -408,6 +415,7 @@ public class DashBoard {
         //this.theme = parent.theme;
         this.keepScreenOn = parent.keepScreenOn;
         this.isAppConnectedOn = parent.isAppConnectedOn;
+        this.isNotificationsOff = parent.isNotificationsOff;
         this.tags = copyTags(parent.tags);
         //do not update devices by purpose
         //this.devices = parent.devices;
@@ -429,10 +437,17 @@ public class DashBoard {
                 if (oldWidget instanceof OnePinWidget) {
                     OnePinWidget onePinWidget = (OnePinWidget) oldWidget;
                     if (onePinWidget.value != null) {
-                        copyWidget.updateIfSame(oldWidget);
+                        copyWidget.updateIfSame(onePinWidget.deviceId,
+                                onePinWidget.pin, onePinWidget.pinType, onePinWidget.value);
                     }
-                } else {
-                    copyWidget.updateIfSame(oldWidget);
+                } else if (oldWidget instanceof MultiPinWidget) {
+                    MultiPinWidget multiPinWidget = (MultiPinWidget) oldWidget;
+                    if (multiPinWidget.dataStreams != null) {
+                        for (DataStream dataStream : multiPinWidget.dataStreams) {
+                            copyWidget.updateIfSame(multiPinWidget.deviceId,
+                                    dataStream.pin, dataStream.pinType, dataStream.value);
+                        }
+                    }
                 }
             }
             copyWidget.isDefaultColor = false;

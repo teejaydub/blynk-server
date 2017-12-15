@@ -26,6 +26,7 @@ import cc.blynk.server.core.model.PinStorageKey;
 import cc.blynk.server.core.model.auth.Session;
 import cc.blynk.server.core.model.auth.User;
 import cc.blynk.server.core.model.enums.PinType;
+import cc.blynk.server.core.model.enums.WidgetProperty;
 import cc.blynk.server.core.model.serialization.JsonParser;
 import cc.blynk.server.core.model.widgets.MultiPinWidget;
 import cc.blynk.server.core.model.widgets.OnePinWidget;
@@ -123,7 +124,7 @@ public class HttpAPILogic extends TokenBaseHttpHandler {
             return badRequest("Invalid token.");
         }
 
-        return ok(tokenValue.dash.toString());
+        return ok(tokenValue.dash.toStringRestrictive());
     }
 
     @GET
@@ -348,9 +349,15 @@ public class HttpAPILogic extends TokenBaseHttpHandler {
             return badRequest("No widget for SetWidgetProperty command.");
         }
 
+        WidgetProperty widgetProperty = WidgetProperty.getProperty(property);
+        if (widgetProperty == null) {
+            log.debug("Property not exists. Property : {}", property);
+            return badRequest("Property not exists.");
+        }
+
         try {
             //todo for now supporting only single property
-            widget.setProperty(property, values[0]);
+            widget.setProperty(widgetProperty, values[0]);
         } catch (Exception e) {
             log.debug("Error setting widget property. Reason : {}", e.getMessage());
             return badRequest("Error setting widget property.");
@@ -454,7 +461,7 @@ public class HttpAPILogic extends TokenBaseHttpHandler {
 
         String pinValue = String.join(StringUtils.BODY_SEPARATOR_STRING, pinValues);
 
-        reportingDao.process(user, dashId, deviceId, pin, pinType, pinValue, now);
+        reportingDao.process(user, dash, deviceId, pin, pinType, pinValue, now);
 
         dash.update(deviceId, pin, pinType, pinValue, now);
 
@@ -515,7 +522,7 @@ public class HttpAPILogic extends TokenBaseHttpHandler {
         }
 
         for (PinData pinData : pinsData) {
-            reportingDao.process(user, dashId, deviceId, pin, pinType, pinData.value, pinData.timestamp);
+            reportingDao.process(user, dash, deviceId, pin, pinType, pinData.value, pinData.timestamp);
         }
 
         long now = System.currentTimeMillis();
@@ -565,11 +572,6 @@ public class HttpAPILogic extends TokenBaseHttpHandler {
         if (!dash.isActive) {
             log.debug("Project is not active.");
             return badRequest("Project is not active.");
-        }
-
-        if (user.isLoggedOut) {
-            log.debug("User is logged out.");
-            return badRequest("User is logged out.");
         }
 
         Notification notification = dash.getWidgetByType(Notification.class);

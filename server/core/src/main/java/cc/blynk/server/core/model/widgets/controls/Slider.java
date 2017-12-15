@@ -1,5 +1,6 @@
 package cc.blynk.server.core.model.widgets.controls;
 
+import cc.blynk.server.core.model.enums.PinMode;
 import cc.blynk.server.core.model.widgets.OnePinWidget;
 
 /**
@@ -14,13 +15,8 @@ public class Slider extends OnePinWidget {
     public int frequency;
 
     @Override
-    public String getModeType() {
-        return "out";
-    }
-
-    @Override
-    public boolean isPWMSupported() {
-        return pwmMode;
+    public PinMode getModeType() {
+        return PinMode.out;
     }
 
     @Override

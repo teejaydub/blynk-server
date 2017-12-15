@@ -13,6 +13,7 @@ import cc.blynk.server.core.model.widgets.Widget;
 import cc.blynk.server.core.model.widgets.controls.Button;
 import cc.blynk.server.core.model.widgets.controls.Slider;
 import cc.blynk.server.core.model.widgets.others.Player;
+import cc.blynk.server.core.model.widgets.others.Video;
 import cc.blynk.server.core.model.widgets.ui.Menu;
 import cc.blynk.server.core.protocol.model.messages.ResponseMessage;
 import cc.blynk.server.core.protocol.model.messages.appllication.CreateTag;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
@@ -194,8 +196,6 @@ public class SetPropertyTest extends IntegrationBase {
         Menu menuWidget = (Menu) widget;
 
         assertArrayEquals(new String[] {"label1", "label2", "label3"}, menuWidget.labels);
-
-
     }
 
     @Test
@@ -232,6 +232,18 @@ public class SetPropertyTest extends IntegrationBase {
         widget = profile.dashBoards[0].findWidgetByPin(0, (byte) 4, PinType.VIRTUAL);
 
         assertEquals(widget.x, 1);
+    }
+
+    @Test
+    public void testSetWrongWidgetProperty3() throws Exception {
+        clientPair.appClient.send("loadProfileGzipped");
+        Profile profile = parseProfile(clientPair.appClient.getBody());
+
+        Widget widget = profile.dashBoards[0].findWidgetByPin(0, (byte) 4, PinType.VIRTUAL);
+        assertEquals(widget.x, 1);
+
+        clientPair.hardwareClient.send("setProperty 4 url 0");
+        verify(clientPair.hardwareClient.responseMock, timeout(500)).channelRead(any(), eq(new ResponseMessage(1, ILLEGAL_COMMAND_BODY)));
     }
 
     @Test
@@ -288,6 +300,16 @@ public class SetPropertyTest extends IntegrationBase {
     }
 
     @Test
+    public void setMinMaxWrongPropertyFloat() throws Exception {
+        clientPair.hardwareClient.send("setProperty 4 min 10.11-1");
+        clientPair.hardwareClient.send("setProperty 4 max 20.22-2");
+        verify(clientPair.hardwareClient.responseMock, timeout(500)).channelRead(any(), eq(illegalCommandBody(1)));
+        verify(clientPair.hardwareClient.responseMock, timeout(500)).channelRead(any(), eq(illegalCommandBody(2)));
+        verify(clientPair.appClient.responseMock, after(50).never()).channelRead(any(), any());
+        verify(clientPair.appClient.responseMock, after(50).never()).channelRead(any(), any());
+    }
+
+    @Test
     public void testSetColorShouldNotWorkForNonActiveProject() throws Exception {
         clientPair.appClient.send("deactivate 1");
         verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(ok(1)));
@@ -297,4 +319,76 @@ public class SetPropertyTest extends IntegrationBase {
         verify(clientPair.appClient.responseMock, after(500).never()).channelRead(any(), eq(new SetWidgetPropertyMessage(1, b("1 4 color #23C48E"))));
     }
 
+    @Test
+    public void testSetUrlForVideo() throws Exception {
+        clientPair.appClient.send("createWidget 1\0{\"id\":102, \"width\":1, \"height\":1, \"x\":5, \"y\":0, \"tabId\":0, \"label\":\"Some Text\", \"type\":\"VIDEO\", \"pinType\":\"VIRTUAL\", \"pin\":17}");
+        verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(ok(1)));
+
+        clientPair.hardwareClient.send("setProperty 17 url http://123.com");
+        verify(clientPair.hardwareClient.responseMock, timeout(500)).channelRead(any(), eq(ok(1)));
+        verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(new SetWidgetPropertyMessage(1, b("1 17 url http://123.com"))));
+
+        clientPair.appClient.reset();
+        clientPair.appClient.send("loadProfileGzipped");
+        Profile profile = parseProfile(clientPair.appClient.getBody());
+
+        Widget widget = profile.dashBoards[0].findWidgetByPin(0, (byte) 17, PinType.VIRTUAL);
+        assertNotNull(widget);
+        assertTrue(widget instanceof Video);
+        Video videoWidget = (Video) widget;
+
+        assertEquals("http://123.com", videoWidget.url);
+    }
+
+    @Test
+    public void testPropertyIsNotRestoredAfterWidgetCreated() throws Exception {
+        clientPair.hardwareClient.send("setProperty 122 label new");
+        verify(clientPair.hardwareClient.responseMock, timeout(500)).channelRead(any(), eq(ok(1)));
+
+        clientPair.appClient.send("createWidget 1\0{\"id\":102, \"width\":1, \"height\":1, \"x\":5, \"y\":0, \"tabId\":0, \"label\":\"Some Text\", \"type\":\"VIDEO\", \"pinType\":\"VIRTUAL\", \"pin\":122}");
+        verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(ok(1)));
+
+        clientPair.appClient.send("deactivate 1");
+        verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(ok(2)));
+
+        clientPair.appClient.send("activate 1");
+        verify(clientPair.appClient.responseMock, timeout(1000)).channelRead(any(), eq(ok(3)));
+        verify(clientPair.appClient.responseMock, never()).channelRead(any(), eq(setProperty(1111, "1 122 label new")));
+    }
+
+    @Test
+    public void testPropertyIsNotRestoredAfterWidgetUpdated() throws Exception {
+        clientPair.appClient.send("createWidget 1\0{\"id\":102, \"width\":1, \"height\":1, \"x\":5, \"y\":0, \"tabId\":0, \"label\":\"Some Text\", \"type\":\"VIDEO\", \"pinType\":\"VIRTUAL\", \"pin\":17}");
+        verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(ok(1)));
+
+        clientPair.hardwareClient.send("setProperty 17 url http://123.com");
+        verify(clientPair.hardwareClient.responseMock, timeout(500)).channelRead(any(), eq(ok(1)));
+        verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(new SetWidgetPropertyMessage(1, b("1 17 url http://123.com"))));
+
+        clientPair.appClient.reset();
+        clientPair.appClient.send("loadProfileGzipped");
+        Profile profile = parseProfile(clientPair.appClient.getBody());
+
+        Widget widget = profile.dashBoards[0].findWidgetByPin(0, (byte) 17, PinType.VIRTUAL);
+        assertNotNull(widget);
+        assertTrue(widget instanceof Video);
+        Video videoWidget = (Video) widget;
+
+        assertEquals("http://123.com", videoWidget.url);
+
+        clientPair.appClient.send("updateWidget 1\0{\"id\":102, \"url\":\"http://updated.com\", \"width\":1, \"height\":1, \"x\":5, \"y\":0, \"tabId\":0, \"label\":\"Some Text\", \"type\":\"VIDEO\", \"pinType\":\"VIRTUAL\", \"pin\":17}");
+        verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(ok(2)));
+
+        clientPair.appClient.send("deactivate 1");
+        verify(clientPair.appClient.responseMock, timeout(500)).channelRead(any(), eq(ok(3)));
+
+        clientPair.appClient.send("activate 1");
+        verify(clientPair.appClient.responseMock, timeout(1000)).channelRead(any(), eq(ok(4)));
+        verify(clientPair.appClient.responseMock, never()).channelRead(any(), eq(setProperty(1111, "1 17 url http://updated.com")));
+
+        clientPair.appClient.reset();
+        clientPair.appClient.send("loadProfileGzipped");
+        profile = parseProfile(clientPair.appClient.getBody());
+        assertEquals(0, profile.dashBoards[0].pinsStorage.size());
+    }
 }

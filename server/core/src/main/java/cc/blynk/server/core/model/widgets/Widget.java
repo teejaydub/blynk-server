@@ -1,7 +1,9 @@
 package cc.blynk.server.core.model.widgets;
 
 import cc.blynk.server.core.model.DataStream;
+import cc.blynk.server.core.model.enums.PinMode;
 import cc.blynk.server.core.model.enums.PinType;
+import cc.blynk.server.core.model.enums.WidgetProperty;
 import cc.blynk.server.core.model.serialization.JsonParser;
 import cc.blynk.server.core.model.widgets.controls.Button;
 import cc.blynk.server.core.model.widgets.controls.FieldInput;
@@ -55,9 +57,10 @@ import cc.blynk.server.core.model.widgets.ui.TimeInput;
 import cc.blynk.server.core.model.widgets.ui.table.Table;
 import cc.blynk.server.core.model.widgets.ui.tiles.DeviceTiles;
 import cc.blynk.utils.ByteUtils;
-import cc.blynk.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import static cc.blynk.utils.StringUtils.BODY_SEPARATOR;
 
 /**
  * User: ddumanskiy
@@ -153,32 +156,41 @@ public abstract class Widget implements CopyObject<Widget> {
 
     public volatile String label;
 
-    public volatile boolean isEnabled = true;
-
     public boolean isDefaultColor;
 
-    protected static void append(StringBuilder sb, byte pin, PinType pinType, String pinMode) {
-        if (pin != DataStream.NO_PIN && pinMode != null && pinType != PinType.VIRTUAL) {
-            sb.append(StringUtils.BODY_SEPARATOR)
-                    .append(pin)
-                    .append(StringUtils.BODY_SEPARATOR)
-                    .append(pinMode);
-        }
-    }
-
-    public abstract boolean updateIfSame(int deviceId, byte pin, PinType type, String value);
-
-    public abstract void updateIfSame(Widget widget);
-
-    public abstract boolean isSame(int deviceId, byte pin, PinType type);
-
-    public abstract String getJsonValue();
-
-    public abstract String getModeType();
+    public abstract PinMode getModeType();
 
     public abstract int getPrice();
 
-    public abstract void append(StringBuilder sb, int deviceId);
+    protected void append(StringBuilder sb, byte pin, PinType pinType) {
+        if (pin != DataStream.NO_PIN && pinType != PinType.VIRTUAL) {
+            PinMode pinMode = getModeType();
+            if (pinMode != null) {
+                sb.append(BODY_SEPARATOR)
+                        .append(pin)
+                        .append(BODY_SEPARATOR)
+                        .append(pinMode);
+            }
+        }
+    }
+
+    public boolean updateIfSame(int deviceId, byte pin, PinType type, String value) {
+        return false;
+    }
+
+    public boolean isSame(int deviceId, byte pin, PinType type) {
+        return false;
+    }
+
+    public String getJsonValue() {
+        return null;
+    }
+
+    /**
+     * This method should be overridden by every widget that supports direct pins (analog, digital) control
+     */
+    public void append(StringBuilder sb, int deviceId) {
+    }
 
     //todo this is ugly and not effective. refactor
     @Override
@@ -187,37 +199,17 @@ public abstract class Widget implements CopyObject<Widget> {
         return JsonParser.parseWidget(copyWidgetString);
     }
 
-    public void setProperty(String property, String propertyValue) {
+    public void setProperty(WidgetProperty property, String propertyValue) {
         switch (property) {
-            case "label" :
+            case LABEL :
                 this.label = propertyValue;
                 break;
-            case "color" :
+            case COLOR :
                 this.color = ByteUtils.parseColor(propertyValue);
                 this.isDefaultColor = false;
                 break;
-            case "isEnabled" :
-                this.isEnabled = Boolean.parseBoolean(propertyValue);
-                break;
             default:
                 throw new RuntimeException("Error setting widget property.");
-        }
-    }
-
-    public static boolean isNotValidProperty(String property) {
-        switch (property) {
-            case "label":
-            case "color":
-            case "isEnabled":
-            case "onLabel":
-            case "offLabel":
-            case "labels":
-            case "min":
-            case "max":
-            case "isOnPlay":
-                return false;
-            default:
-                return true;
         }
     }
 }

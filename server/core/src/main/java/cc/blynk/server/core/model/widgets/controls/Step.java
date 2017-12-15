@@ -1,5 +1,6 @@
 package cc.blynk.server.core.model.widgets.controls;
 
+import cc.blynk.server.core.model.enums.PinMode;
 import cc.blynk.server.core.model.widgets.OnePinWidget;
 
 /**
@@ -17,14 +18,11 @@ public class Step extends OnePinWidget {
 
     public boolean isSendStep;
 
-    @Override
-    public boolean isPWMSupported() {
-        return pwmMode;
-    }
+    public int frequency;
 
     @Override
-    public String getModeType() {
-        return "out";
+    public PinMode getModeType() {
+        return PinMode.out;
     }
 
     @Override

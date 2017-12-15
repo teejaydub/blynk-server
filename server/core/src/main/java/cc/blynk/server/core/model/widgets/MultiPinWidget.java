@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.StringJoiner;
 
 import static cc.blynk.utils.StringUtils.BODY_SEPARATOR;
+import static cc.blynk.utils.StringUtils.BODY_SEPARATOR_STRING;
 
 /**
  * The Blynk Project.
@@ -32,18 +33,6 @@ public abstract class MultiPinWidget extends Widget implements AppSyncWidget {
             }
         }
         return isSame;
-    }
-
-    @Override
-    public void updateIfSame(Widget widget) {
-        if (widget instanceof MultiPinWidget) {
-            MultiPinWidget multiPinWidget = (MultiPinWidget) widget;
-            if (multiPinWidget.dataStreams != null && multiPinWidget.deviceId == this.deviceId) {
-                for (DataStream dataStream : multiPinWidget.dataStreams) {
-                    updateIfSame(multiPinWidget.deviceId, dataStream.pin, dataStream.pinType, dataStream.value);
-                }
-            }
-        }
     }
 
     @Override
@@ -88,7 +77,7 @@ public abstract class MultiPinWidget extends Widget implements AppSyncWidget {
     public void append(StringBuilder sb, int deviceId) {
         if (dataStreams != null && this.deviceId == deviceId) {
             for (DataStream dataStream : dataStreams) {
-                append(sb, dataStream.pin, dataStream.pinType, getModeType());
+                append(sb, dataStream.pin, dataStream.pinType);
             }
         }
     }
@@ -98,12 +87,21 @@ public abstract class MultiPinWidget extends Widget implements AppSyncWidget {
         if (dataStreams == null) {
             return "[]";
         }
+
         StringJoiner sj = new StringJoiner(",", "[", "]");
-        for (DataStream dataStream : dataStreams) {
-            if (dataStream.value == null) {
-                sj.add("\"\"");
-            } else {
-                sj.add("\"" + dataStream.value + "\"");
+        if (isSplitMode()) {
+            for (DataStream dataStream : dataStreams) {
+                if (dataStream.value == null) {
+                    sj.add("\"\"");
+                } else {
+                    sj.add("\"" + dataStream.value + "\"");
+                }
+            }
+        } else {
+            if (dataStreams[0].notEmpty()) {
+                for (String pinValue : dataStreams[0].value.split(BODY_SEPARATOR_STRING)) {
+                    sj.add("\"" + pinValue + "\"");
+                }
             }
         }
         return sj.toString();

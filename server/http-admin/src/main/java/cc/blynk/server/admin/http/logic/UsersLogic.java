@@ -24,6 +24,7 @@ import cc.blynk.server.core.model.device.Device;
 import cc.blynk.server.core.model.serialization.JsonParser;
 import cc.blynk.server.db.DBManager;
 import cc.blynk.utils.SHA256Util;
+import cc.blynk.utils.TokenGeneratorUtil;
 import cc.blynk.utils.http.MediaType;
 import io.netty.channel.ChannelHandler;
 
@@ -161,7 +162,13 @@ public class UsersLogic extends CookiesBaseHttpHandler {
             deleteUserByName(id);
             for (DashBoard dashBoard : oldUser.profile.dashBoards) {
                 for (Device device : dashBoard.devices) {
-                    tokenManager.assignToken(updatedUser, dashBoard, device, device.token);
+                    String token;
+                    if (device.token == null) {
+                        token = TokenGeneratorUtil.generateNewToken();
+                    } else {
+                        token = device.token;
+                    }
+                    tokenManager.assignToken(updatedUser, dashBoard, device, token);
                 }
             }
         }
@@ -173,9 +180,20 @@ public class UsersLogic extends CookiesBaseHttpHandler {
         }
 
         userDao.add(updatedUser);
+
+        for (DashBoard dash : updatedUser.profile.dashBoards) {
+            for (Device device : dash.devices) {
+                if (device.token != null) {
+                    tokenManager.updateRegularCache(device.token, updatedUser, dash, device);
+                }
+            }
+            if (dash.sharedToken != null) {
+                tokenManager.updateSharedCache(dash.sharedToken, updatedUser, dash.id);
+            }
+        }
+
         updatedUser.lastModifiedTs = System.currentTimeMillis();
         log.debug("Adding new user {}", updatedUser.email);
-
 
         return ok(updatedUser);
     }

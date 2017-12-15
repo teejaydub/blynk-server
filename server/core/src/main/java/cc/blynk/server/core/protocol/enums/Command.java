@@ -46,7 +46,6 @@ public final class Command {
     public static final short ADD_PUSH_TOKEN = 27;
     public static final short EXPORT_GRAPH_DATA = 28;
     //app sharing commands
-    public static final short GET_SHARED_DASH = 29;
     public static final short GET_SHARE_TOKEN = 30;
     public static final short REFRESH_SHARE_TOKEN = 31;
     public static final short SHARE_LOGIN = 32;
@@ -107,6 +106,7 @@ public final class Command {
     public static final short UPDATE_TILE_TEMPLATE = 68;
     public static final short DELETE_TILE_TEMPLATE = 69;
     public static final short GET_WIDGET = 70;
+    public static final short DEVICE_OFFLINE = 71;
 
     //http codes. Used only for stats
     public static final short HTTP_IS_HARDWARE_CONNECTED = 82;
@@ -153,7 +153,6 @@ public final class Command {
                 put(SET_WIDGET_PROPERTY, "setWidgetProperty");
                 put(BRIDGE, "Bridge");
                 put(HARDWARE, "Hardware");
-                put(GET_SHARED_DASH, "GetSharedDash");
                 put(GET_SHARE_TOKEN, "GetShareToken");
                 put(REFRESH_SHARE_TOKEN, "RefreshShareToken");
                 put(SHARE_LOGIN, "ShareLogin");
@@ -202,6 +201,8 @@ public final class Command {
 
                 put(GET_CLONE_CODE, "GetCloneCode");
                 put(GET_PROJECT_BY_CLONE_CODE, "GetProjectByCloneCode");
+
+                put(DEVICE_OFFLINE, "deviceOffline");
 
                 put(HTTP_IS_HARDWARE_CONNECTED, "HttpIsHardwareConnected");
                 put(HTTP_IS_APP_CONNECTED, "HttpIsAppConnected");

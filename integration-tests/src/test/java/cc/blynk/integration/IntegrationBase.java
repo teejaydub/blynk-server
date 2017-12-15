@@ -17,19 +17,18 @@ import cc.blynk.server.core.protocol.model.messages.appllication.CreateDevice;
 import cc.blynk.server.core.protocol.model.messages.appllication.GetTokenMessage;
 import cc.blynk.server.core.protocol.model.messages.appllication.SetWidgetPropertyMessage;
 import cc.blynk.server.core.protocol.model.messages.common.HardwareConnectedMessage;
-import cc.blynk.server.notifications.push.android.AndroidGCMMessage;
-import cc.blynk.server.notifications.push.android.GCMData;
 import cc.blynk.utils.StringUtils;
 import cc.blynk.utils.properties.ServerProperties;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.mockito.ArgumentCaptor;
 
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static cc.blynk.server.core.protocol.enums.Response.ILLEGAL_COMMAND;
+import static cc.blynk.server.core.protocol.enums.Response.ILLEGAL_COMMAND_BODY;
+import static cc.blynk.server.core.protocol.enums.Response.INVALID_TOKEN;
 import static cc.blynk.server.core.protocol.enums.Response.NOT_ALLOWED;
 import static cc.blynk.server.core.protocol.enums.Response.OK;
 import static cc.blynk.server.core.protocol.enums.Response.SERVER_ERROR;
@@ -93,6 +92,10 @@ public abstract class IntegrationBase extends BaseTest {
         return new ResponseMessage(msgId, ILLEGAL_COMMAND);
     }
 
+    public static ResponseMessage illegalCommandBody(int msgId) {
+        return new ResponseMessage(msgId, ILLEGAL_COMMAND_BODY);
+    }
+
     public static ResponseMessage ok(int msgId) {
         return new ResponseMessage(msgId, OK);
     }
@@ -111,6 +114,10 @@ public abstract class IntegrationBase extends BaseTest {
 
     public static ResponseMessage notAllowed(int msgId) {
         return new ResponseMessage(msgId, NOT_ALLOWED);
+    }
+
+    public static ResponseMessage invalidToken(int msgId) {
+        return new ResponseMessage(msgId, INVALID_TOKEN);
     }
 
     public static ClientPair initAppAndHardPair(String host, int appPort, int hardPort, String user, String jsonProfile,
@@ -200,21 +207,4 @@ public abstract class IntegrationBase extends BaseTest {
     public static ClientPair initAppAndHardPair(String jsonProfile) throws Exception {
         return initAppAndHardPair("localhost", tcpAppPort, tcpHardPort, DEFAULT_TEST_USER + " 1", jsonProfile, properties, 10000);
     }
-
-    private static Object getPrivateField(Object o, Class<?> clazz, String fieldName) throws Exception {
-        Field field = clazz.getDeclaredField(fieldName);
-        field.setAccessible(true);
-        return field.get(o);
-    }
-
-    public static long getPrivateAndroidTSField(Object o) {
-        try {
-            GCMData gcmData = (GCMData) getPrivateField(o, AndroidGCMMessage.class, "data");
-            return (long) getPrivateField(gcmData, GCMData.class, "ts");
-        } catch (Exception e) {
-            //ignore
-            return 0;
-        }
-    }
-
 }
