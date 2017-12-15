@@ -4,3 +4,8 @@
 target
 *.log
 dependency-reduced-pom.xml
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
