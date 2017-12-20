@@ -23,8 +23,8 @@ public class HardwareSSLServer extends BaseServer {
 
     private final ChannelInitializer<SocketChannel> channelInitializer;
 
-    private static final int WRITE_LIMIT = 10;  // bytes per second
-    private static final int MS_PER_SEC = 1000;
+    private static final int WRITE_LIMIT = 20;  // bytes per check period
+    private static final int MS_PER_CHECK = 100;  // milliseconds per check period
 
     public HardwareSSLServer(Holder holder) {
         super(holder.props.getProperty("listen.address"),
@@ -48,7 +48,7 @@ public class HardwareSSLServer extends BaseServer {
                 .addLast("HSSLChannelState", hardwareChannelStateHandler)
                 .addLast("HSSLMessageDecoder", new MessageDecoder(holder.stats))
                 .addLast("HSSLMessageEncoder", new MessageEncoder(holder.stats))
-                .addLast("HSSLChannelShaper", new ChannelTrafficShapingHandler(WRITE_LIMIT, 0, MS_PER_SEC))
+                .addLast("HSSLChannelShaper", new ChannelTrafficShapingHandler(WRITE_LIMIT, 0, MS_PER_CHECK))
                 .addLast("HSSLLogin", hardwareLoginHandler)
                 .addLast("HSSLNotLogged", new HardwareNotLoggedHandler())
                 .addLast("HSSLAlreadyLogged", alreadyLoggedHandler);
