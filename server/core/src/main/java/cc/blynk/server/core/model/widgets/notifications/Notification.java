@@ -27,6 +27,9 @@ public class Notification extends NoPinWidget {
 
     public int notifyWhenOfflineIgnorePeriod;
 
+    public byte offlineFlagPin = 0;  // always virtual, so no need to store a PinType
+        // 0 means don't set any pin.
+
     public Priority priority = Priority.normal;
 
     public String soundUri;

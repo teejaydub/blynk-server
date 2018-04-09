@@ -1,12 +1,16 @@
 package cc.blynk.server.hardware.handlers.hardware;
 
+import cc.blynk.server.Holder;
 import cc.blynk.server.core.dao.SessionDao;
 import cc.blynk.server.core.model.DashBoard;
 import cc.blynk.server.core.model.auth.Session;
+import cc.blynk.server.core.model.auth.User;
 import cc.blynk.server.core.model.device.Device;
 import cc.blynk.server.core.model.device.Status;
 import cc.blynk.server.core.model.widgets.notifications.Notification;
+import cc.blynk.server.core.processors.EventorProcessor;
 import cc.blynk.server.core.session.HardwareStateHolder;
+import cc.blynk.server.hardware.handlers.hardware.logic.OfflineFlagLogic;
 import cc.blynk.server.notifications.push.GCMWrapper;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
@@ -34,10 +38,12 @@ public class HardwareChannelStateHandler extends ChannelInboundHandlerAdapter {
 
     private final SessionDao sessionDao;
     private final GCMWrapper gcmWrapper;
+    private final EventorProcessor eventorProcessor;
 
-    public HardwareChannelStateHandler(SessionDao sessionDao, GCMWrapper gcmWrapper) {
-        this.sessionDao = sessionDao;
-        this.gcmWrapper = gcmWrapper;
+    public HardwareChannelStateHandler(Holder holder) {
+        this.sessionDao = holder.sessionDao;
+        this.gcmWrapper = holder.gcmWrapper;
+        this.eventorProcessor = holder.eventorProcessor;
     }
 
     @Override
@@ -84,14 +90,14 @@ public class HardwareChannelStateHandler extends ChannelInboundHandlerAdapter {
         Notification notification = dashBoard.getWidgetByType(Notification.class);
 
         if (notification != null && notification.notifyWhenOffline) {
-            sendPushNotification(ctx, dashBoard, notification, dashBoard.id, device);
+            sendPushNotification(ctx, dashBoard, session, state.user, notification, dashBoard.id, device);
         } else {
             session.sendOfflineMessageToApps(dashBoard.id, device.id);
         }
     }
 
-    private void sendPushNotification(ChannelHandlerContext ctx, DashBoard dashBoard,
-                                      Notification notification, int dashId, Device device) {
+    private void sendPushNotification(ChannelHandlerContext ctx, DashBoard dashBoard, Session session,
+        User user, Notification notification, int dashId, Device device) {
         String dashName = dashBoard.name == null ? "" : dashBoard.name;
         String deviceName = ((device == null || device.name == null) ? "device" : device.name);
         String message = "Your " + deviceName + " went offline. \"" + dashName + "\" project is disconnected.";
@@ -103,7 +109,8 @@ public class HardwareChannelStateHandler extends ChannelInboundHandlerAdapter {
         } else {
             //delayed notification
             //https://github.com/blynkkk/blynk-server/issues/493
-            ctx.executor().schedule(new DelayedPush(device, notification, message, dashId),
+            ctx.executor().schedule(new DelayedPush(device, session, user, notification,
+                message, dashBoard, eventorProcessor),
                     notification.notifyWhenOfflineIgnorePeriod, TimeUnit.MILLISECONDS);
         }
     }
@@ -111,15 +118,22 @@ public class HardwareChannelStateHandler extends ChannelInboundHandlerAdapter {
     private final class DelayedPush implements Runnable {
 
         private final Device device;
+        private final Session session;
+        private final User user;
         private final Notification notification;
         private final String message;
-        private final int dashId;
+        private final DashBoard dashBoard;
+        private final EventorProcessor eventorProcessor;
 
-        DelayedPush(Device device, Notification notification, String message, int dashId) {
+        DelayedPush(Device device, Session session, User user, Notification notification,
+            String message, DashBoard dashBoard, EventorProcessor eventorProcessor) {
             this.device = device;
+            this.session = session;
+            this.user = user;
             this.notification = notification;
             this.message = message;
-            this.dashId = dashId;
+            this.dashBoard = dashBoard;
+            this.eventorProcessor = eventorProcessor;
         }
 
         @Override
@@ -129,8 +143,11 @@ public class HardwareChannelStateHandler extends ChannelInboundHandlerAdapter {
                     && now - device.disconnectTime >= notification.notifyWhenOfflineIgnorePeriod) {
                 notification.push(gcmWrapper,
                         message,
-                        dashId
+                        dashBoard.id
                 );
+
+                OfflineFlagLogic.setOffline(notification, dashBoard,
+                    device, user, session, eventorProcessor, true);
             }
         }
     }

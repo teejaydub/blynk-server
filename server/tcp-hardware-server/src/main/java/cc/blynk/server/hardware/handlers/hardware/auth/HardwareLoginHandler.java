@@ -7,6 +7,8 @@ import cc.blynk.server.core.model.DashBoard;
 import cc.blynk.server.core.model.auth.Session;
 import cc.blynk.server.core.model.auth.User;
 import cc.blynk.server.core.model.device.Device;
+import cc.blynk.server.core.model.widgets.notifications.Notification;
+import cc.blynk.server.core.processors.EventorProcessor;
 import cc.blynk.server.core.protocol.handlers.DefaultExceptionHandler;
 import cc.blynk.server.core.protocol.model.messages.appllication.LoginMessage;
 import cc.blynk.server.core.session.HardwareStateHolder;
@@ -14,6 +16,7 @@ import cc.blynk.server.db.DBManager;
 import cc.blynk.server.handlers.DefaultReregisterHandler;
 import cc.blynk.server.handlers.common.HardwareNotLoggedHandler;
 import cc.blynk.server.hardware.handlers.hardware.HardwareHandler;
+import cc.blynk.server.hardware.handlers.hardware.logic.OfflineFlagLogic;
 import cc.blynk.utils.IPUtils;
 import cc.blynk.utils.StringUtils;
 import cc.blynk.utils.structure.LRUCache;
@@ -62,7 +65,8 @@ public class HardwareLoginHandler extends SimpleChannelInboundHandler<LoginMessa
     }
 
     private static void completeLogin(Channel channel, Session session, User user,
-                                      DashBoard dash, Device device, int msgId) {
+                                      DashBoard dash, Device device,
+                                      EventorProcessor eventorProcessor, int msgId) {
         log.debug("completeLogin. {}", channel);
 
         session.addHardChannel(channel);
@@ -81,6 +85,21 @@ public class HardwareLoginHandler extends SimpleChannelInboundHandler<LoginMessa
         device.lastLoggedIP = IPUtils.getIp(channel.remoteAddress());
 
         log.info("{} hardware joined.", user.email);
+
+        clearOffline(dash, device, user, session, eventorProcessor);
+    }
+
+    // Clears the offline flag pin, if desired, so that events can be reset.
+    private static void clearOffline(DashBoard dashBoard, Device device, User user,
+        Session session, EventorProcessor eventorProcessor) {
+        try {
+            Notification notification = dashBoard.getWidgetByType(Notification.class);
+            if (notification != null) {
+                OfflineFlagLogic.setOffline(notification, dashBoard,
+                    device, user, session, eventorProcessor, false);
+            }
+        } catch (Exception e) {
+        }
     }
 
     @Override
@@ -115,9 +134,11 @@ public class HardwareLoginHandler extends SimpleChannelInboundHandler<LoginMessa
         if (session.initialEventLoop != ctx.channel().eventLoop()) {
             log.debug("Re registering hard channel. {}", ctx.channel());
             reRegisterChannel(ctx, session, channelFuture ->
-                    completeLogin(channelFuture.channel(), session, user, dash, device, message.id));
+                    completeLogin(channelFuture.channel(), session, user, dash, device,
+                        holder.eventorProcessor, message.id));
         } else {
-            completeLogin(ctx.channel(), session, user, dash, device, message.id);
+            completeLogin(ctx.channel(), session, user, dash, device,
+                holder.eventorProcessor, message.id);
         }
     }
 

@@ -28,7 +28,7 @@ public class MQTTHardwareServer extends BaseServer {
         int hardTimeoutSecs = holder.limits.hardwareIdleTimeout;
         MqttHardwareLoginHandler mqttHardwareLoginHandler = new MqttHardwareLoginHandler(holder);
         HardwareChannelStateHandler hardwareChannelStateHandler =
-                new HardwareChannelStateHandler(holder.sessionDao, holder.gcmWrapper);
+                new HardwareChannelStateHandler(holder);
 
         channelInitializer = new ChannelInitializer<SocketChannel>() {
             @Override
