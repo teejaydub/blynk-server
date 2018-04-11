@@ -401,9 +401,9 @@ public class DashBoard {
 
         this.widgets = updatedDashboard.widgets;
 
-        for (Widget widget : widgets) {
-            cleanPinStorage(widget, false);
-        }
+        // for (Widget widget : widgets) {
+        //     cleanPinStorage(widget, false);
+        // }
 
         this.updatedAt = System.currentTimeMillis();
     }
