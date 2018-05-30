@@ -1,6 +1,7 @@
 package cc.blynk.utils;
 
 import java.io.InputStream;
+import java.io.File;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -11,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import org.apache.commons.io.FileUtils;
 
 /**
  * Utility class to work with jar file. Used in order to find all static resources
@@ -47,6 +49,13 @@ public final class JarUtil {
 
                     Files.copy(is, newStaticFile, StandardCopyOption.REPLACE_EXISTING);
                 }
+            }
+
+            // Now override the static files with installation-specific override files.
+            File overrides = new File("static-override");
+            if (overrides.exists()) {
+                File staticDir = new File("static");
+                FileUtils.copyDirectory(overrides, staticDir);
             }
 
             return true;
