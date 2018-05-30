@@ -55,6 +55,7 @@ public class ResetPasswordLogic extends BaseHttpHandler {
     private final MailWrapper mailWrapper;
     private final String resetPassUrl;
     private final String pageContent;
+    private final String resultPageContent;
     private final BlockingIOProcessor blockingIOProcessor;
     private final DBManager dbManager;
     private final FileManager fileManager;
@@ -69,8 +70,10 @@ public class ResetPasswordLogic extends BaseHttpHandler {
         this.mailWrapper = holder.mailWrapper;
 
         String host = holder.props.getServerHost();
-        this.resetPassUrl = "http://" + host + "/landing?token=";
+        this.resetPassUrl = "https://" + host + "/landing?token=";
+
         this.pageContent = FileLoaderUtil.readFileAsString(RESET_PASS_STATIC_PATH + "enterNewPassword.html");
+        this.resultPageContent = FileLoaderUtil.readFileAsString(RESET_PASS_STATIC_PATH + "success.html");
         this.blockingIOProcessor = holder.blockingIOProcessor;
         this.dbManager = holder.dbManager;
         this.fileManager = holder.fileManager;
@@ -88,7 +91,7 @@ public class ResetPasswordLogic extends BaseHttpHandler {
                                            @FormParam("appName") String appName) {
 
         if (BlynkEmailValidator.isNotValidEmail(email)) {
-            return badRequest(email + " email has not valid format.");
+            return badRequest(email + " email has invalid format.");
         }
 
         final String trimmedEmail = email.trim().toLowerCase();
@@ -97,7 +100,7 @@ public class ResetPasswordLogic extends BaseHttpHandler {
         User user = userDao.getByName(trimmedEmail, appName);
 
         if (user == null) {
-            return badRequest("Sorry, this account is not exists.");
+            return badRequest("Sorry, this account doesn't exist.");
         }
 
         String token = generateToken();
@@ -111,7 +114,7 @@ public class ResetPasswordLogic extends BaseHttpHandler {
         blockingIOProcessor.execute(() -> {
             Response response;
             try {
-                mailWrapper.sendHtml(trimmedEmail, "Password reset request for Blynk app.", message);
+                mailWrapper.sendHtml(trimmedEmail, "Password reset request for CoolBot Pro.", message);
                 log.info("{} mail sent.", trimmedEmail);
                 response = ok("Email was sent.");
             } catch (Exception e) {
@@ -160,7 +163,8 @@ public class ResetPasswordLogic extends BaseHttpHandler {
 
         log.info("{} password was reset.", user.email);
         tokensPool.removeToken(token);
-        return ok("Password was successfully reset.");
+
+        return ok(resultPageContent, MediaType.TEXT_HTML);
     }
 
     @GET
