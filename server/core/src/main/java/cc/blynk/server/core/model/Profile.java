@@ -1,6 +1,7 @@
 package cc.blynk.server.core.model;
 
 import cc.blynk.server.core.model.auth.App;
+import cc.blynk.server.core.model.auth.Subscription;
 import cc.blynk.server.core.model.serialization.JsonParser;
 import cc.blynk.server.core.protocol.exceptions.IllegalCommandException;
 
@@ -19,6 +20,12 @@ public class Profile {
     public volatile DashBoard[] dashBoards = EMPTY_DASHBOARDS;
 
     public volatile App[] apps = EMPTY_APPS;
+
+    public volatile Subscription subscription;
+
+    public Profile() {
+        this.subscription = new Subscription();
+    }
 
     public int getDashIndexOrThrow(int dashId) {
         for (int i = 0; i < dashBoards.length; i++) {
@@ -85,11 +92,15 @@ public class Profile {
             return false;
         }
 
+        if (!subscription.equals(that.subscription)) {
+            return false;
+        }
+
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(dashBoards);
+        return Arrays.hashCode(dashBoards) * subscription.hashCode();
     }
 }
