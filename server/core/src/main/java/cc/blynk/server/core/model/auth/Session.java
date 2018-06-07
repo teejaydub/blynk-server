@@ -260,8 +260,12 @@ public class Session {
         }
     }
 
-    public void closeAll() {
+    public void closeAllHardwareChannels() {
         hardwareChannels.forEach(io.netty.channel.Channel::close);
+    }
+
+    public void closeAll() {
+        closeAllHardwareChannels();
         appChannels.forEach(io.netty.channel.Channel::close);
     }
 

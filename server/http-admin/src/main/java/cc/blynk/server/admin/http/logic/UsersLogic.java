@@ -157,7 +157,7 @@ public class UsersLogic extends CookiesBaseHttpHandler {
             return badRequest("You need also change password when changing email.");
         }
 
-            //user name was changed
+        //user name was changed
         if (!updatedUser.email.equals(oldUser.email)) {
             deleteUserByName(id);
             for (DashBoard dashBoard : oldUser.profile.dashBoards) {
@@ -194,6 +194,18 @@ public class UsersLogic extends CookiesBaseHttpHandler {
 
         updatedUser.lastModifiedTs = System.currentTimeMillis();
         log.debug("Adding new user {}", updatedUser.email);
+
+        // Kick off devices if this user is no longer actively subscribed.
+        if (updatedUser.profile.subscription.isActive != oldUser.profile.subscription.isActive) {
+            if (!updatedUser.profile.subscription.isActive) {
+                // The user is no longer subscribed, so remove all devices from this session.
+                UserKey userKey = new UserKey(updatedUser.email, updatedUser.appName);
+                Session session = sessionDao.userSession.get(userKey);
+                if (session != null) {
+                    session.closeAllHardwareChannels();
+                }
+            }
+        }
 
         return ok(updatedUser);
     }
