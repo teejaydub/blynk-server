@@ -19,6 +19,7 @@ import cc.blynk.server.core.dao.UserDao;
 import cc.blynk.server.core.dao.UserKey;
 import cc.blynk.server.core.model.DashBoard;
 import cc.blynk.server.core.model.auth.Session;
+import cc.blynk.server.core.model.auth.Subscription;
 import cc.blynk.server.core.model.auth.User;
 import cc.blynk.server.core.model.device.Device;
 import cc.blynk.server.core.model.serialization.JsonParser;
@@ -198,16 +199,61 @@ public class UsersLogic extends CookiesBaseHttpHandler {
         // Kick off devices if this user is no longer actively subscribed.
         if (updatedUser.profile.subscription.isActive != oldUser.profile.subscription.isActive) {
             if (!updatedUser.profile.subscription.isActive) {
-                // The user is no longer subscribed, so remove all devices from this session.
-                UserKey userKey = new UserKey(updatedUser.email, updatedUser.appName);
-                Session session = sessionDao.userSession.get(userKey);
-                if (session != null) {
-                    session.closeAllHardwareChannels();
-                }
+                kickDevicesIfInactive(updatedUser);
             }
         }
 
         return ok(updatedUser);
+    }
+
+
+    @GET
+    @Path("/{id}/subscription")
+    public Response getSubscription(@PathParam("id") String id) {
+        String[] parts =  slitByLast(id);
+        String name = parts[0];
+        String appName = parts[1];
+
+        User user = userDao.getByName(name, appName);
+        Subscription subscription = user.profile.subscription;
+        return ok(subscription.toString());
+    }
+
+    @PUT
+    @Consumes(value = MediaType.APPLICATION_JSON)
+    @Path("/{id}/subscription")
+    public Response updateSubscription(@PathParam("id") String id,
+                                   Subscription updatedSubscription) {
+
+        log.debug("Updating user {}'s subscription", id);
+
+        String[] parts =  slitByLast(id);
+        String name = parts[0];
+        String appName = parts[1];
+
+        User user = userDao.getByName(name, appName);
+        Subscription subscription = user.profile.subscription;
+
+        subscription.update(updatedSubscription);
+        user.lastModifiedTs = System.currentTimeMillis();
+
+        // Kick off devices if this user is no longer actively subscribed.
+        if (!subscription.isActive) {
+            kickDevicesIfInactive(user);
+        }
+
+        return ok(subscription.toString());
+    }
+
+    private void kickDevicesIfInactive(User user) {
+        if (!user.profile.subscription.isActive) {
+            // The user is no longer subscribed, so remove all devices from this session.
+            UserKey userKey = new UserKey(user.email, user.appName);
+            Session session = sessionDao.userSession.get(userKey);
+            if (session != null) {
+                session.closeAllHardwareChannels();
+            }
+        }
     }
 
     @DELETE

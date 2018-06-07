@@ -13,6 +13,11 @@ public class Subscription {
     // Additional JSON data that can be used to store whatever's necessary to link this subscription to a provider.
     public String metadata;
 
+    public void update(Subscription other) {
+        isActive = other.isActive;
+        metadata = other.metadata;
+    }
+
     @Override
     public String toString() {
         return JsonParser.toJson(this);

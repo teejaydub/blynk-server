@@ -9,3 +9,7 @@ dependency-reduced-pom.xml
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
+
+# Temp files for testing
+cookies
+test.json
