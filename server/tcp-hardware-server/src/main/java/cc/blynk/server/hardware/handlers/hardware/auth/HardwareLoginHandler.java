@@ -123,6 +123,10 @@ public class HardwareLoginHandler extends SimpleChannelInboundHandler<LoginMessa
         Device device = tokenValue.device;
         DashBoard dash = tokenValue.dash;
 
+        if (!checkSubscription(user)) {
+            return;
+        }
+
         ctx.pipeline().remove(this);
         ctx.pipeline().remove(HardwareNotLoggedHandler.class);
         HardwareStateHolder hardwareStateHolder = new HardwareStateHolder(user, tokenValue.dash, device);
@@ -177,4 +181,24 @@ public class HardwareLoginHandler extends SimpleChannelInboundHandler<LoginMessa
         handleGeneralException(ctx, cause);
     }
 
+    // Returns true iff everything's OK with the subscription,
+    // otherwise logs an error and returns false.
+    private boolean checkSubscription(User user) {
+        // If we're grandfathering all users, set isActive.
+        // Do this regardless of whether we're checking subscriptions.
+        if (holder.props.getBoolProperty("subscription.defaultActive")) {
+            log.trace("Subscriptions required, but grandfathering this user.");
+            user.profile.subscription.isActive = true;
+        }
+        user.profile.subscription.isActive = false;
+
+        // If we're not checking subscriptions at all, everything succeeds.
+        if (!holder.props.getBoolProperty("subscription.required")) {
+            log.trace("Subscriptions not required.");
+            return true;
+        }
+
+        log.debug("Subscription required, user active: {}.", user.profile.subscription.isActive);
+        return true;
+    }
 }

@@ -209,6 +209,14 @@ public class AppLoginHandler extends SimpleChannelInboundHandler<LoginMessage>
         user.lastLoggedIP = IPUtils.getIp(channel.remoteAddress());
         user.lastLoggedAt = System.currentTimeMillis();
 
+        // If we're grandfathering all users, set isActive.
+        // Do this regardless of whether we're checking subscriptions.
+        if (holder.props.getBoolProperty("subscription.defaultActive")
+            && !user.profile.subscription.isActive) {
+            log.trace("Grandfathering the subscription for {}.", user.name);
+            user.profile.subscription.isActive = true;
+        }
+
         session.addAppChannel(channel);
         channel.writeAndFlush(ok(msgId), channel.voidPromise());
         for (DashBoard dashBoard : user.profile.dashBoards) {
