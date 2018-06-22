@@ -123,6 +123,9 @@ public final class Command {
     public static final short HTTP_CLONE = 93;
     public static final short HTTP_TOTAL = 94;
 
+    // Subscription messages
+    public static final short UPDATE_SUB = 120;
+
     private Command() {
     }
 

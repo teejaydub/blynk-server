@@ -36,6 +36,7 @@ import static cc.blynk.core.http.Response.badRequest;
 import static cc.blynk.core.http.Response.notFound;
 import static cc.blynk.core.http.Response.ok;
 import static cc.blynk.utils.AdminHttpUtil.sort;
+import static cc.blynk.server.core.protocol.enums.Command.UPDATE_SUB;
 
 
 /**
@@ -237,12 +238,18 @@ public class UsersLogic extends CookiesBaseHttpHandler {
         subscription.update(updatedSubscription);
         user.lastModifiedTs = System.currentTimeMillis();
 
+        // Send a message saying we've updated the subscription.
+        String subText = subscription.toString();
+        UserKey userKey = new UserKey(user.email, user.appName);
+        Session session = sessionDao.userSession.get(userKey);
+        session.sendToAllApps(UPDATE_SUB, 888, subText);
+
         // Kick off devices if this user is no longer actively subscribed.
         if (!subscription.isActive) {
             kickDevicesIfInactive(user);
         }
 
-        return ok(subscription.toString());
+        return ok(subText);
     }
 
     private void kickDevicesIfInactive(User user) {

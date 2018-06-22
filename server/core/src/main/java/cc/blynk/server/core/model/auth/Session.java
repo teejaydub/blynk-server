@@ -191,6 +191,13 @@ public class Session {
         }
     }
 
+    public void sendToAllApps(short cmd, int msgId, String finalBody) {
+        int appsNum = appChannels.size();
+        if (appsNum > 0) {
+            send(appChannels, appsNum, cmd, msgId, finalBody);
+        }
+    }
+
     private Set<Channel> filterByDash(int dashId) {
         Set<Channel> targetChannels = new HashSet<>();
         for (Channel channel : appChannels) {
