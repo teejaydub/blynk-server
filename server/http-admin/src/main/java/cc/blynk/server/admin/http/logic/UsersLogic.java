@@ -242,11 +242,13 @@ public class UsersLogic extends CookiesBaseHttpHandler {
         String subText = subscription.toString();
         UserKey userKey = new UserKey(user.email, user.appName);
         Session session = sessionDao.userSession.get(userKey);
-        session.sendToAllApps(UPDATE_SUB, 888, subText);
+        if (session != null) {
+            session.sendToAllApps(UPDATE_SUB, 888, subText);
 
-        // Kick off devices if this user is no longer actively subscribed.
-        if (!subscription.isActive) {
-            kickDevicesIfInactive(user);
+            // Kick off devices if this user is no longer actively subscribed.
+            if (!subscription.isActive) {
+                kickDevicesIfInactive(user);
+            }
         }
 
         return ok(subText);
