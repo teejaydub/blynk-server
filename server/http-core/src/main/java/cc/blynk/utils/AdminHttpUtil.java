@@ -95,6 +95,13 @@ public final class AdminHttpUtil {
             if (returnType == String.class) {
                 return ((String) v1).compareTo((String) v2);
             }
+            if (returnType == boolean.class) {
+                return ((boolean) v1)
+                ?
+                    (((boolean) v2) ? 0 : 1)
+                :
+                    (((boolean) v2) ? -1 : 0);
+            }
 
             throw new RuntimeException("Unexpected field type. Type : " + returnType.getName());
         }
