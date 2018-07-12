@@ -81,7 +81,8 @@ public class GMailClient implements MailClient {
 
         Transport.send(message);
 
-        log.trace("Mail to {} was sent. Subj : {}, body : {}", to, subj, body);
+        log.debug("Mail sent to {}. Subj: {}", to, subj);
+        log.trace("Mail body: {}", body);
     }
 
     private void attachCSV(Multipart multipart, QrHolder[] attachmentData) throws Exception {
@@ -120,7 +121,8 @@ public class GMailClient implements MailClient {
         message.setContent(body, contentType);
 
         Transport.send(message);
-        log.trace("Mail to {} was sent. Subj : {}, body : {}", to, subj, body);
+        log.debug("Mail sent to {}. Subj: {}", to, subj);
+        log.trace("Mail body: {}", body);
     }
 
 }

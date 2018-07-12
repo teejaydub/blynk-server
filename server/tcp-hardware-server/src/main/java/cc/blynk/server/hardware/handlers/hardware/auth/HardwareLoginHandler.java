@@ -84,7 +84,7 @@ public class HardwareLoginHandler extends SimpleChannelInboundHandler<LoginMessa
         device.connected();
         device.lastLoggedIP = IPUtils.getIp(channel.remoteAddress());
 
-        log.info("{} hardware joined.", user.email);
+        log.debug("{} hardware joined at IP {}.", user.email, device.lastLoggedIP);
 
         clearOffline(dash, device, user, session, eventorProcessor);
     }
