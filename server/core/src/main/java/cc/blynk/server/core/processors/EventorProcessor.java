@@ -7,6 +7,7 @@ import cc.blynk.server.core.model.auth.User;
 import cc.blynk.server.core.model.enums.PinType;
 import cc.blynk.server.core.model.widgets.notifications.Mail;
 import cc.blynk.server.core.model.widgets.notifications.Notification;
+import cc.blynk.server.core.model.widgets.notifications.SMS;
 import cc.blynk.server.core.model.widgets.notifications.Twitter;
 import cc.blynk.server.core.model.widgets.others.eventor.Eventor;
 import cc.blynk.server.core.model.widgets.others.eventor.Rule;
@@ -15,10 +16,12 @@ import cc.blynk.server.core.model.widgets.others.eventor.model.action.SetPinActi
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.MailAction;
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.NotificationAction;
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.NotifyAction;
+import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.SmsAction;
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.TwitAction;
 import cc.blynk.server.core.stats.GlobalStats;
 import cc.blynk.server.notifications.mail.MailWrapper;
 import cc.blynk.server.notifications.push.GCMWrapper;
+import cc.blynk.server.notifications.sms.SMSWrapper;
 import cc.blynk.server.notifications.twitter.TwitterWrapper;
 import cc.blynk.utils.NumberUtil;
 import cc.blynk.utils.validators.BlynkEmailValidator;
@@ -41,15 +44,18 @@ public class EventorProcessor {
     private static final Logger log = LogManager.getLogger(EventorProcessor.class);
 
     private final GCMWrapper gcmWrapper;
+    private final SMSWrapper smsWrapper;
     private final TwitterWrapper twitterWrapper;
     private final MailWrapper mailWrapper;
     private final BlockingIOProcessor blockingIOProcessor;
     private final GlobalStats globalStats;
 
     public EventorProcessor(GCMWrapper gcmWrapper, MailWrapper mailWrapper, TwitterWrapper twitterWrapper,
+                            SMSWrapper smsWrapper,
                             BlockingIOProcessor blockingIOProcessor, GlobalStats stats) {
         this.gcmWrapper = gcmWrapper;
         this.mailWrapper = mailWrapper;
+        this.smsWrapper = smsWrapper;
         this.twitterWrapper = twitterWrapper;
         this.blockingIOProcessor = blockingIOProcessor;
         this.globalStats = stats;
@@ -95,6 +101,8 @@ public class EventorProcessor {
         String body = PIN_PATTERN.matcher(notificationAction.message).replaceAll(triggerValue);
         if (notificationAction instanceof NotifyAction) {
             push(gcmWrapper, dash, body);
+        } else if (notificationAction instanceof SmsAction) {
+            sms(dash, body);
         } else if (notificationAction instanceof TwitAction) {
             twit(dash, body);
         } else if (notificationAction instanceof MailAction) {
@@ -155,6 +163,34 @@ public class EventorProcessor {
                 String errorMessage = e.getMessage();
                 if (errorMessage != null && errorMessage.contains("Eventor. Status is a duplicate")) {
                     log.warn("Error sending twit. Reason : {}", e.getMessage());
+                }
+            }
+        });
+    }
+
+    private void sms(DashBoard dash, String body) {
+        if (SMS.isWrongBody(body)) {
+            log.debug("Wrong SMS body.");
+            return;
+        }
+
+        SMS smsWidget = dash.getWidgetByType(SMS.class);
+
+        if (smsWidget == null
+                || smsWidget.to == null
+                || smsWidget.to.isEmpty()) {
+            log.debug("No target number provided for SMS eventor.");
+            return;
+        }
+
+        blockingIOProcessor.execute(() -> {
+            try {
+                log.debug("SMS send to: {} message: {}", smsWidget.to, body);
+                // smsWrapper.send(smsWidget.to, body);
+            } catch (Exception e) {
+                String errorMessage = e.getMessage();
+                if (errorMessage != null && errorMessage.contains("Eventor. Status is a duplicate")) {
+                    log.warn("Error sending SMS. Reason : {}", e.getMessage());
                 }
             }
         });

@@ -2,6 +2,7 @@ package cc.blynk.server.core.model.widgets.others.eventor.model.action;
 
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.MailAction;
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.NotifyAction;
+import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.SmsAction;
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.TwitAction;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
@@ -19,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @JsonSubTypes.Type(value = SetPinAction.class, name = "SETPIN"),
         @JsonSubTypes.Type(value = NotifyAction.class, name = "NOTIFY"),
         @JsonSubTypes.Type(value = MailAction.class, name = "MAIL"),
+        @JsonSubTypes.Type(value = SmsAction.class, name = "SMS"),
         @JsonSubTypes.Type(value = TwitAction.class, name = "TWIT"),
 })
 public abstract class BaseAction {

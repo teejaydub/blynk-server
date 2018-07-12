@@ -9,7 +9,13 @@ import cc.blynk.server.core.model.widgets.NoPinWidget;
  */
 public class SMS extends NoPinWidget {
 
+    private static final int MAX_SMS_BODY_SIZE = 160;
+
     public String to;
+
+    public static boolean isWrongBody(String body) {
+       return body == null || body.isEmpty() || body.length() > MAX_SMS_BODY_SIZE;
+    }
 
     @Override
     public int getPrice() {

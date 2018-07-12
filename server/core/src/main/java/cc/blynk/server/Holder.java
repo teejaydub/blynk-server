@@ -130,7 +130,7 @@ public class Holder implements Closeable {
         this.otaManager = new OTAManager(props);
 
         this.eventorProcessor = new EventorProcessor(
-                gcmWrapper, mailWrapper, twitterWrapper, blockingIOProcessor, stats);
+                gcmWrapper, mailWrapper, twitterWrapper, smsWrapper, blockingIOProcessor, stats);
         this.timerWorker = new TimerWorker(userDao, sessionDao, gcmWrapper);
         this.readingWidgetsWorker = new ReadingWidgetsWorker(sessionDao, userDao);
         this.limits = new Limits(props);
@@ -177,7 +177,7 @@ public class Holder implements Closeable {
         this.otaManager = new OTAManager(props);
 
         this.eventorProcessor = new EventorProcessor(
-                gcmWrapper, mailWrapper, twitterWrapper, blockingIOProcessor, stats);
+                gcmWrapper, mailWrapper, twitterWrapper, smsWrapper, blockingIOProcessor, stats);
         this.asyncHttpClient = new DefaultAsyncHttpClient(new DefaultAsyncHttpClientConfig.Builder()
                 .setUserAgent(null)
                 .setKeepAlive(true)
