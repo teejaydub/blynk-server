@@ -16,8 +16,7 @@ public class SMSWrapper {
     public SMSWrapper(Properties props, AsyncHttpClient httpclient) {
         String service = props.getProperty("sms.service");
         if (service != null && service.contains("messagebird")) {
-            // client = new MessageBirdClient(props, httpclient);
-            client = new NexmoClient(props, httpclient);
+            client = new MessageBirdClient(props, httpclient);
         } else {
             client = new NexmoClient(props, httpclient);
         }

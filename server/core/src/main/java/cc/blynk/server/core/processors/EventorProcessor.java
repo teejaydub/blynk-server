@@ -185,8 +185,7 @@ public class EventorProcessor {
 
         blockingIOProcessor.execute(() -> {
             try {
-                log.debug("SMS send to: {} message: {}", smsWidget.to, body);
-                // smsWrapper.send(smsWidget.to, body);
+                smsWrapper.send(smsWidget.to, body);
             } catch (Exception e) {
                 String errorMessage = e.getMessage();
                 if (errorMessage != null && errorMessage.contains("Eventor. Status is a duplicate")) {
