@@ -15,9 +15,11 @@ import java.util.Properties;
 
 class MBSmsResponse {
 
-    public RecipientList recipientList;
+    public String description;  // if there's an error
 
-    public static class RecipientList {
+    public Recipients recipients;
+
+    public static class Recipients {
 
         public int totalCount;
         public int totalSentCount;
@@ -64,17 +66,19 @@ public class MessageBirdClient implements SmsClient {
 
         httpclient.preparePost("https://rest.messagebird.com/messages")
                 .addHeader("Authorization", "AccessKey " + key)
-                .setQueryParams(params)
+                .setFormParams(params)
                 .execute(new AsyncCompletionHandler<Response>() {
                     @Override
                     public Response onCompleted(org.asynchttpclient.Response response) throws Exception {
-                        if (response.getStatusCode() == 200) {
-                            MBSmsResponse smsResponse = responseReader.readValue(response.getResponseBody());
-                            if (smsResponse.recipientList.totalSentCount != RECIPIENTS_PER_SEND) {
+                        log.trace("MessageBird response: {}", response);
+                        MBSmsResponse smsResponse = responseReader.readValue(response.getResponseBody());
+                        if (response.getStatusCode() == 201) {
+                            if (smsResponse.recipients.totalSentCount != RECIPIENTS_PER_SEND) {
                                 log.error("MessageBird reports {} messages sent; expecting {}",
-                                    smsResponse.recipientList.totalSentCount, RECIPIENTS_PER_SEND);
-                                log.trace("MessageBird response: {}", response);
+                                    smsResponse.recipients.totalSentCount, RECIPIENTS_PER_SEND);
                             }
+                        } else {
+                            log.error("MessageBird error: {}", smsResponse.description);
                         }
                         return response;
                     }
