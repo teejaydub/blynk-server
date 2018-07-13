@@ -23,6 +23,10 @@ public class Profile {
 
     public volatile Subscription subscription;
 
+    // Contains arbitrary account information persisted by the app, global to all devices.
+    // JSON is suggested but not required (or validated).
+    public volatile String account;
+
     public Profile() {
         this.subscription = new Subscription();
     }
@@ -96,11 +100,15 @@ public class Profile {
             return false;
         }
 
+        if (!account.equals(that.account)) {
+            return false;
+        }
+
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(dashBoards) * subscription.hashCode();
+        return Arrays.hashCode(dashBoards) * subscription.hashCode() * account.hashCode();
     }
 }

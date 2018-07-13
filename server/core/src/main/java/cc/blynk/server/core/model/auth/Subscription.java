@@ -2,6 +2,11 @@ package cc.blynk.server.core.model.auth;
 
 import cc.blynk.server.core.model.serialization.JsonParser;
 
+/* A Subscription holds data about a user's permissions to use the app.
+   Permission can be granted or revoked independently, while still keeping the user's data intact.
+   The user can't read this data via the Profile, but it's only accessible via the Admin interface.
+*/
+
 public class Subscription {
 
     // True iff the subscription is valid, false if not.
