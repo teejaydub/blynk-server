@@ -22,6 +22,7 @@ import cc.blynk.server.application.handlers.main.logic.LoadProfileGzippedLogic;
 import cc.blynk.server.application.handlers.main.logic.MailQRsLogic;
 import cc.blynk.server.application.handlers.main.logic.RedeemLogic;
 import cc.blynk.server.application.handlers.main.logic.RefreshTokenLogic;
+import cc.blynk.server.application.handlers.main.logic.UpdateAccountLogic;
 import cc.blynk.server.application.handlers.main.logic.UpdateAppLogic;
 import cc.blynk.server.application.handlers.main.logic.UpdateFaceLogic;
 import cc.blynk.server.application.handlers.main.logic.dashboard.CreateDashLogic;
@@ -100,6 +101,7 @@ import static cc.blynk.server.core.protocol.enums.Command.REDEEM;
 import static cc.blynk.server.core.protocol.enums.Command.REFRESH_SHARE_TOKEN;
 import static cc.blynk.server.core.protocol.enums.Command.REFRESH_TOKEN;
 import static cc.blynk.server.core.protocol.enums.Command.SHARING;
+import static cc.blynk.server.core.protocol.enums.Command.UPDATE_ACCOUNT;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_APP;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_DASH;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_DEVICE;
@@ -355,6 +357,10 @@ public class AppHandler extends BaseSimpleChannelInboundHandler<StringMessage> {
                 break;
             case DELETE_APP :
                 DeleteAppLogic.messageReceived(ctx, state, msg);
+                break;
+
+            case UPDATE_ACCOUNT :
+                UpdateAccountLogic.messageReceived(ctx, state, msg);
                 break;
 
             case GET_PROJECT_BY_TOKEN :

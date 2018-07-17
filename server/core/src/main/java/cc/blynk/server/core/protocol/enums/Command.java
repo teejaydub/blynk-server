@@ -108,6 +108,9 @@ public final class Command {
     public static final short GET_WIDGET = 70;
     public static final short DEVICE_OFFLINE = 71;
 
+    // Profile.account write access (needs to be contiguous?)
+    public static final short UPDATE_ACCOUNT = 72;
+
     //http codes. Used only for stats
     public static final short HTTP_IS_HARDWARE_CONNECTED = 82;
     public static final short HTTP_IS_APP_CONNECTED = 83;
@@ -195,6 +198,7 @@ public final class Command {
                 put(CREATE_APP, "CreateApp");
                 put(UPDATE_APP, "UpdateApp");
                 put(DELETE_APP, "DeleteApp");
+                put(UPDATE_ACCOUNT, "UpdateAccount");
                 put(GET_PROJECT_BY_TOKEN, "GetProjectByToken");
                 put(EMAIL_QR, "MailQRs");
                 put(UPDATE_FACE, "UpdateFace");

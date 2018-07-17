@@ -52,6 +52,7 @@ import static cc.blynk.server.core.protocol.enums.Command.SHARE_LOGIN;
 import static cc.blynk.server.core.protocol.enums.Command.SHARING;
 import static cc.blynk.server.core.protocol.enums.Command.SMS;
 import static cc.blynk.server.core.protocol.enums.Command.TWEET;
+import static cc.blynk.server.core.protocol.enums.Command.UPDATE_ACCOUNT;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_APP;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_DASH;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_DEVICE;
@@ -198,6 +199,10 @@ public final class CommandParserUtil {
                 return UPDATE_APP;
             case "deleteapp" :
                 return DELETE_APP;
+
+            case "updateaccount" :
+                return UPDATE_ACCOUNT;
+
             case "getprojectbytoken" :
                 return GET_PROJECT_BY_TOKEN;
             case "emailqr" :
