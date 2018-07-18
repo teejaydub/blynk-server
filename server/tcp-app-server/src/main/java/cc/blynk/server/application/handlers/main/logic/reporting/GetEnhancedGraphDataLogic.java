@@ -3,9 +3,12 @@ package cc.blynk.server.application.handlers.main.logic.reporting;
 import cc.blynk.server.core.BlockingIOProcessor;
 import cc.blynk.server.core.dao.ReportingDao;
 import cc.blynk.server.core.model.DashBoard;
+import cc.blynk.server.core.model.DataStream;
 import cc.blynk.server.core.model.auth.User;
+import cc.blynk.server.core.model.enums.PinType;
 import cc.blynk.server.core.model.widgets.Target;
 import cc.blynk.server.core.model.widgets.Widget;
+import cc.blynk.server.core.model.widgets.outputs.graph.AggregationFunctionType;
 import cc.blynk.server.core.model.widgets.outputs.graph.EnhancedHistoryGraph;
 import cc.blynk.server.core.model.widgets.outputs.graph.GraphDataStream;
 import cc.blynk.server.core.model.widgets.outputs.graph.GraphPeriod;
@@ -59,8 +62,8 @@ public class GetEnhancedGraphDataLogic {
             targetId = ParseUtil.parseInt(dashIdAndTargetIdString[1]);
         }
         int dashId = Integer.parseInt(dashIdAndTargetIdString[0]);
+        DashBoard dash = user.profile.getDashByIdOrThrow(dashId);
 
-        long widgetId = Long.parseLong(messageParts[1]);
         GraphPeriod graphPeriod = GraphPeriod.valueOf(messageParts[2]);
         int page = 0;
         if (messageParts.length == 4) {
@@ -68,50 +71,80 @@ public class GetEnhancedGraphDataLogic {
         }
         int skipCount = graphPeriod.numberOfPoints * page;
 
-        DashBoard dash = user.profile.getDashByIdOrThrow(dashId);
-        Widget widget = dash.getWidgetById(widgetId);
+        // Allow for two styles of getting the pin list: one where the second argument is a widget,
+        // and the other where it's a comma-separate list of pins, like "v1,v2".
+        GraphPinRequest[] requestedPins;
 
-        //special case for device tiles widget.
-        if (widget == null) {
-            DeviceTiles deviceTiles = dash.getWidgetByType(DeviceTiles.class);
-            if (deviceTiles != null) {
-                widget = deviceTiles.getWidgetById(widgetId);
-            }
-        }
+        if (Character.isDigit(messageParts[1].charAt(0))) {
+            // Assume they've sent the wiget ID.
+            long widgetId = Long.parseLong(messageParts[1]);
 
+            Widget widget = dash.getWidgetById(widgetId);
 
-        if (!(widget instanceof EnhancedHistoryGraph)) {
-            throw new IllegalCommandException("Passed wrong widget id.");
-        }
-
-        EnhancedHistoryGraph enhancedHistoryGraph = (EnhancedHistoryGraph) widget;
-
-        int numberOfStreams = enhancedHistoryGraph.dataStreams.length;
-        if (numberOfStreams == 0) {
-            log.debug("No data streams for enhanced graph with id {}.", widgetId);
-            ctx.writeAndFlush(noData(message.id), ctx.voidPromise());
-            return;
-        }
-
-        GraphPinRequest[] requestedPins = new GraphPinRequest[enhancedHistoryGraph.dataStreams.length];
-
-        int i = 0;
-        for (GraphDataStream graphDataStream : enhancedHistoryGraph.dataStreams) {
-            //special case, for device tiles widget targetID may be overrided
-            Target target = dash.getTarget(graphDataStream.getTargetId(targetId));
-            if (target == null) {
-                requestedPins[i] = new GraphPinRequest(dashId, -1,
-                        graphDataStream.dataStream, graphPeriod, skipCount, graphDataStream.functionType);
-            } else {
-                if (target.isTag()) {
-                    requestedPins[i] = new GraphPinRequest(dashId, target.getDeviceIds(),
-                            graphDataStream.dataStream, graphPeriod, skipCount, graphDataStream.functionType);
-                } else {
-                    requestedPins[i] = new GraphPinRequest(dashId, target.getDeviceId(),
-                            graphDataStream.dataStream, graphPeriod, skipCount, graphDataStream.functionType);
+            //special case for device tiles widget.
+            if (widget == null) {
+                DeviceTiles deviceTiles = dash.getWidgetByType(DeviceTiles.class);
+                if (deviceTiles != null) {
+                    widget = deviceTiles.getWidgetById(widgetId);
                 }
             }
-            i++;
+
+            if (!(widget instanceof EnhancedHistoryGraph)) {
+                throw new IllegalCommandException("Passed wrong widget id.");
+            }
+
+            EnhancedHistoryGraph enhancedHistoryGraph = (EnhancedHistoryGraph) widget;
+
+            int numberOfStreams = enhancedHistoryGraph.dataStreams.length;
+            if (numberOfStreams == 0) {
+                log.debug("No data streams for enhanced graph with id {}.", widgetId);
+                ctx.writeAndFlush(noData(message.id), ctx.voidPromise());
+                return;
+            }
+
+            requestedPins = new GraphPinRequest[enhancedHistoryGraph.dataStreams.length];
+
+            int i = 0;
+            for (GraphDataStream graphDataStream : enhancedHistoryGraph.dataStreams) {
+                //special case, for device tiles widget targetID may be overrided
+                Target target = dash.getTarget(graphDataStream.getTargetId(targetId));
+                if (target == null) {
+                    requestedPins[i] = new GraphPinRequest(dashId, -1,
+                            graphDataStream.dataStream, graphPeriod, skipCount, graphDataStream.functionType);
+                } else {
+                    if (target.isTag()) {
+                        requestedPins[i] = new GraphPinRequest(dashId, target.getDeviceIds(),
+                                graphDataStream.dataStream, graphPeriod, skipCount, graphDataStream.functionType);
+                    } else {
+                        requestedPins[i] = new GraphPinRequest(dashId, target.getDeviceId(),
+                                graphDataStream.dataStream, graphPeriod, skipCount, graphDataStream.functionType);
+                    }
+                }
+                i++;
+            }
+        } else {
+            // Looks like a sequence of pins listed specifically.
+            String[] pinDefs = messageParts[1].split(",");
+            requestedPins = new GraphPinRequest[pinDefs.length];
+
+            Target target = dash.getTarget(targetId);
+            if (target == null) {
+                log.debug("No graph data target {}", targetId);
+                ctx.writeAndFlush(noData(message.id), ctx.voidPromise());
+                return;
+            }
+
+            int i = 0;
+            for (String pinDef : pinDefs) {
+                PinType pinType = PinType.getPinType(pinDef.charAt(0));
+                byte pin = Byte.parseByte(pinDef.substring(1));
+
+                DataStream dataStream = new DataStream(pin, pinType);
+
+                requestedPins[i] = new GraphPinRequest(dashId, target.getDeviceId(),
+                    dataStream, graphPeriod, skipCount, AggregationFunctionType.AVG);
+                i++;
+            }
         }
 
         readGraphData(ctx.channel(), user, requestedPins, message.id);
