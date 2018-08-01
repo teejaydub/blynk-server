@@ -141,6 +141,9 @@ public class HardwareChannelStateHandler extends ChannelInboundHandlerAdapter {
             final long now = System.currentTimeMillis();
             if (device.status == Status.OFFLINE
                     && now - device.disconnectTime >= notification.notifyWhenOfflineIgnorePeriod) {
+
+                HardwareChannelStateHandler.log.debug("Delayed offline set with device: {}", device);
+
                 notification.push(gcmWrapper,
                         message,
                         dashBoard.id

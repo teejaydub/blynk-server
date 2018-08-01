@@ -5,6 +5,8 @@ import cc.blynk.server.core.dao.ReportingDao;
 import cc.blynk.server.core.dao.SessionDao;
 import cc.blynk.server.core.model.DashBoard;
 import cc.blynk.server.core.model.auth.Session;
+import cc.blynk.server.core.model.device.Device;
+import cc.blynk.server.core.model.device.Status;
 import cc.blynk.server.core.model.enums.PinType;
 import cc.blynk.server.core.processors.BaseProcessorHandler;
 import cc.blynk.server.core.processors.WebhookProcessor;
@@ -79,6 +81,11 @@ public class HardwareLogic extends BaseProcessorHandler {
 
             Session session = sessionDao.userSession.get(state.userKey);
             process(state.user, dash, deviceId, session, pin, pinType, value, now);
+
+            Device device = dash.getDeviceById(deviceId);
+            if (device.status != Status.ONLINE) {
+                log.debug("Device owned by {} offline while getting data from pin {}!", state.user.name, pin);
+            }
 
             if (dash.isActive) {
                 session.sendToApps(HARDWARE, message.id, dash.id, deviceId, body);
