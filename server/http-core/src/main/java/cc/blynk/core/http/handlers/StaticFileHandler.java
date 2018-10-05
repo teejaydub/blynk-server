@@ -40,6 +40,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
+import java.util.regex.Pattern;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static io.netty.handler.codec.http.HttpHeaderNames.CACHE_CONTROL;
@@ -186,6 +187,12 @@ public class StaticFileHandler extends ChannelInboundHandlerAdapter implements D
 
         Path path;
         String uri = request.uri();
+
+        if (isNotSecure(uri)) {
+            sendError(ctx, NOT_FOUND);
+            return;
+        }
+
         //running from jar
         if (isUnpacked) {
             log.debug("Is unpacked.");
@@ -269,6 +276,20 @@ public class StaticFileHandler extends ChannelInboundHandlerAdapter implements D
             // Close the connection when the whole content is written out.
             lastContentFuture.addListener(ChannelFutureListener.CLOSE);
         }
+    }
+
+    private static final Pattern INSECURE_URI = Pattern.compile(".*[<>&\"].*");
+
+    private static boolean isNotSecure(String uri) {
+        if (uri.isEmpty() || uri.charAt(0) != '/') {
+            return true;
+        }
+
+        return uri.contains(File.separator + '.') ||
+               uri.contains('.' + File.separator) ||
+               uri.charAt(0) == '.' || uri.charAt(uri.length() - 1) == '.' ||
+               INSECURE_URI.matcher(uri).matches();
+
     }
 
     @Override
