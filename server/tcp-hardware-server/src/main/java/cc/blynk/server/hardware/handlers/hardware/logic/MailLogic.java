@@ -79,7 +79,7 @@ public class MailLogic extends NotificationBase {
         checkIfNotificationQuotaLimitIsNotReached();
 
         //minimal validation for receiver.
-        if (BlynkEmailValidator.isNotValidEmail(to)) {
+        if (!BlynkEmailValidator.isValidEmails(to)) {
             throw new IllegalCommandException("Invalid mail receiver.");
         }
 

@@ -123,7 +123,7 @@ public class EventorProcessor {
 
         String to = (mail.to == null || mail.to.isEmpty()) ? user.email : mail.to;
 
-        if (BlynkEmailValidator.isNotValidEmail(to)) {
+        if (!BlynkEmailValidator.isValidEmails(to)) {
             log.error("Invalid mail receiver: {}.", to);
             return;
         }
