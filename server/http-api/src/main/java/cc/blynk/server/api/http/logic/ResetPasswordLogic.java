@@ -70,8 +70,7 @@ public class ResetPasswordLogic extends BaseHttpHandler {
         this.mailWrapper = holder.mailWrapper;
 
         String host = holder.props.getServerHost();
-        String port = holder.props.getProperty("app.ssl.port", "443");
-        this.resetPassUrl = "https://" + host + ":" + port + "/landing?token=";
+        this.resetPassUrl = "https://" + host + "/landing?token=";
 
         this.pageContent = FileLoaderUtil.readFileAsString(RESET_PASS_STATIC_PATH + "enterNewPassword.html");
         this.resultPageContent = FileLoaderUtil.readFileAsString(RESET_PASS_STATIC_PATH + "success.html");
