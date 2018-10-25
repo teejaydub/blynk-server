@@ -159,7 +159,6 @@ public class HttpAndWebSocketUnificatorHandler extends ChannelInboundHandlerAdap
         pipeline.addLast(configsLogic);
         pipeline.addLast(hardwareStatsLogic);
 
-        pipeline.addLast(resetPasswordLogic);
         pipeline.addLast(httpAPILogic);
         pipeline.addLast(noMatchHandler);
         pipeline.remove(this);
