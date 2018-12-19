@@ -18,6 +18,7 @@ import cc.blynk.server.core.model.widgets.others.eventor.model.action.notificati
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.NotifyAction;
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.SmsAction;
 import cc.blynk.server.core.model.widgets.others.eventor.model.action.notification.TwitAction;
+import cc.blynk.server.core.model.widgets.Widget;
 import cc.blynk.server.core.stats.GlobalStats;
 import cc.blynk.server.notifications.mail.MailWrapper;
 import cc.blynk.server.notifications.push.GCMWrapper;
@@ -63,12 +64,22 @@ public class EventorProcessor {
 
     public void process(User user, Session session, DashBoard dash, int deviceId, byte pin,
                         PinType type, String triggerValue, long now) {
-        Eventor eventor = dash.getWidgetByType(Eventor.class);
-        if (eventor == null || eventor.rules == null
-                || eventor.deviceId != deviceId || !dash.isActive) {
+        if (!dash.isActive) {
             return;
         }
 
+        for (Widget widget : dash.widgets) {
+            if (Eventor.class.isInstance(widget)) {
+                Eventor eventor = (Eventor) widget;
+                if (eventor.deviceId == deviceId && eventor.rules != null) {
+                    processEventor(eventor, user, session, dash, deviceId, pin, type, triggerValue, now);
+                }
+            }
+        }
+    }
+
+    private void processEventor(Eventor eventor, User user, Session session, DashBoard dash, int deviceId, byte pin,
+                        PinType type, String triggerValue, long now) {
         double valueParsed = NumberUtil.parseDouble(triggerValue);
         if (valueParsed == NumberUtil.NO_RESULT) {
             return;
