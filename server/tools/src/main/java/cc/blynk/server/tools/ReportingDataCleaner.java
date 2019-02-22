@@ -80,7 +80,7 @@ public final class ReportingDataCleaner {
             }
         }
 
-        System.out.println("Visited files: " + filesCount + ". removed bytes: " + overrideCount);
+        System.out.println("Visited files: " + filesCount + ".  Truncated files: " + overrideCount);
     }
 
     private static void truncateFileIfAbove(File file, int limit) {
