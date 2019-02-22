@@ -18,6 +18,9 @@ import java.nio.file.Paths;
  */
 public final class ReportingDataCleaner {
 
+    private static int filesCount = 0;
+    private static int overrideCount = 0;
+
     private ReportingDataCleaner() {
     }
 
@@ -41,9 +44,12 @@ public final class ReportingDataCleaner {
 
         System.out.println("Directories number : " + allReporting.length);
 
-        int count = 24 * 60 * 7; //1 storing minute points only for 1 week
-        int filesCount = 0;
-        int overrideCount = 0;
+        int dayCount = 2;  // storing daily data for this many days
+        int hourCount = 24 * dayCount;  // storing hourly data for the same as daily
+        int minuteCount = 24 * 60 * 2; // storing minute points for fewer days
+        // int dayCount = 180;  // storing daily data for this many days
+        // int hourCount = 24 * dayCount;  // storing hourly data for the same as daily
+        // int minuteCount = 24 * 60 * 32; // storing minute points for fewer days
 
         for (File userDirectory : allReporting) {
             if (userDirectory.isDirectory()) {
@@ -63,29 +69,38 @@ public final class ReportingDataCleaner {
                     if (filesCount != 0 && filesCount % 1000 == 0) {
                         System.out.println("Visited " + filesCount + " files.");
                     }
-                    long fileSize = file.length();
-                    if (file.getPath().endsWith("minute.bin") && fileSize > count * 16) {
-                        System.out.println("Found " + file.getPath() + ". Size : " + fileSize);
-                        try {
-                            Path path = file.toPath();
-                            ByteBuffer userReportingData = FileUtils.read(path, count);
-                            ((Buffer) userReportingData).flip();
-                            write(file, userReportingData);
-                            System.out.println("Successfully copied. Truncated : "
-                                    + (fileSize - userReportingData.position()));
-                            overrideCount++;
-                        } catch (Exception e) {
-                            System.out.println("Error reading file " + file.getAbsolutePath());
-                            System.out.println("Skipping.");
-                        }
+                    if (file.getPath().endsWith("minute.bin")) {
+                        truncateFileIfAbove(file, minuteCount);
+                    } else if (file.getPath().endsWith("hourly.bin")) {
+                        truncateFileIfAbove(file, hourCount);
+                    } else if (file.getPath().endsWith("daily.bin")) {
+                        truncateFileIfAbove(file, dayCount);
                     }
-
-                    filesCount++;
                 }
             }
         }
 
-        System.out.println("Visited : " + filesCount + ". Overrided : " + overrideCount);
+        System.out.println("Visited files: " + filesCount + ". removed bytes: " + overrideCount);
+    }
+
+    private static void truncateFileIfAbove(File file, int limit) {
+        long fileSize = file.length();
+        if (fileSize > limit * 16) {
+            System.out.println("Found " + file.getPath() + ". Size: " + fileSize);
+            try {
+                Path path = file.toPath();
+                ByteBuffer userReportingData = FileUtils.read(path, limit);
+                ((Buffer) userReportingData).flip();
+                write(file, userReportingData);
+                System.out.println("Successfully copied. Freed bytes: "
+                        + (fileSize - userReportingData.position()));
+                overrideCount++;
+            } catch (Exception e) {
+                System.out.println("Error reading file " + file.getAbsolutePath() + "; skipping.");
+            }
+        }
+
+        filesCount++;
     }
 
     private static void write(File file, ByteBuffer data) throws Exception {
