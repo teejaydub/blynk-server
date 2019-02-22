@@ -44,12 +44,15 @@ public final class ReportingDataCleaner {
 
         System.out.println("Directories number : " + allReporting.length);
 
-        int dayCount = 2;  // storing daily data for this many days
-        int hourCount = 24 * dayCount;  // storing hourly data for the same as daily
-        int minuteCount = 24 * 60 * 2; // storing minute points for fewer days
-        // int dayCount = 180;  // storing daily data for this many days
+        // Testing:
+        // int dayCount = 2;  // storing daily data for this many days
         // int hourCount = 24 * dayCount;  // storing hourly data for the same as daily
-        // int minuteCount = 24 * 60 * 32; // storing minute points for fewer days
+        // int minuteCount = 24 * 60 * 2; // storing minute points for fewer days
+
+        // Production:
+        int dayCount = 180;  // storing daily data for this many days
+        int hourCount = 24 * dayCount;  // storing hourly data for the same as daily
+        int minuteCount = 24 * 60 * 32; // storing minute points for fewer days
 
         for (File userDirectory : allReporting) {
             if (userDirectory.isDirectory()) {
