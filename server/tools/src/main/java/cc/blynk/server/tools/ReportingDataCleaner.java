@@ -31,14 +31,14 @@ public final class ReportingDataCleaner {
             System.out.println("Starting processing " + reportingPath.toString());
             start(reportingPath);
         } else {
-            System.out.println(reportingPath.toString() + " not exists.");
+            System.err.println(reportingPath.toString() + " not exists.");
         }
     }
 
     private static void start(Path reportingPath) {
         File[] allReporting = reportingPath.toFile().listFiles();
         if (allReporting == null || allReporting.length == 0) {
-            System.out.println("No files.");
+            System.err.println("No files.");
             return;
         }
 
@@ -99,7 +99,7 @@ public final class ReportingDataCleaner {
                         + (fileSize - userReportingData.position()));
                 overrideCount++;
             } catch (Exception e) {
-                System.out.println("Error reading file " + file.getAbsolutePath() + "; skipping.");
+                System.err.println("Error reading file " + file.getAbsolutePath() + "; skipping.");
             }
         }
 
