@@ -4,7 +4,7 @@ import cc.blynk.server.core.model.serialization.JsonParser;
 
 /* A Subscription holds data about a user's permissions to use the app.
    Permission can be granted or revoked independently, while still keeping the user's data intact.
-   The user can't read this data via the Profile, but it's only accessible via the Admin interface.
+   The user can read this data via the Profile, but it's only modifiable via the Admin interface.
 */
 
 public class Subscription {
@@ -15,11 +15,16 @@ public class Subscription {
     // or on another CRM or bridge server.
     public boolean isActive;
 
+    // True if this user is allowed to log in as other users (for providing support).
+    // Enables the 'masquerade' API.
+    public boolean canMasquerade;
+
     // Additional JSON data that can be used to store whatever's necessary to link this subscription to a provider.
     public String metadata;
 
     public void update(Subscription other) {
         isActive = other.isActive;
+        canMasquerade = other.canMasquerade;
         metadata = other.metadata;
     }
 
@@ -42,6 +47,9 @@ public class Subscription {
         if (isActive != subscription.isActive) {
             return false;
         }
+        if (canMasquerade != subscription.canMasquerade) {
+            return false;
+        }
         if (metadata != subscription.metadata) {
             return false;
         }
@@ -52,6 +60,7 @@ public class Subscription {
     @Override
     public int hashCode() {
         int result = isActive ? 1 : 0;
+        result += canMasquerade ? 2 : 0;
         result = 31 * result + (metadata != null ? metadata.hashCode() : 0);
         return result;
     }
