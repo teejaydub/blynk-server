@@ -110,6 +110,7 @@ public final class Command {
 
     // Profile.account write access (needs to be contiguous?)
     public static final short UPDATE_ACCOUNT = 72;
+    public static final short MASQUERADE = 73;
 
     //http codes. Used only for stats
     public static final short HTTP_IS_HARDWARE_CONNECTED = 82;

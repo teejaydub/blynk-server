@@ -37,6 +37,7 @@ import cc.blynk.server.core.protocol.model.messages.appllication.HardwareResendF
 import cc.blynk.server.core.protocol.model.messages.appllication.LoadProfileGzippedStringMessage;
 import cc.blynk.server.core.protocol.model.messages.appllication.LoginMessage;
 import cc.blynk.server.core.protocol.model.messages.appllication.LogoutMessage;
+import cc.blynk.server.core.protocol.model.messages.appllication.MasqueradeMessage;
 import cc.blynk.server.core.protocol.model.messages.appllication.RedeemMessage;
 import cc.blynk.server.core.protocol.model.messages.appllication.RefreshTokenMessage;
 import cc.blynk.server.core.protocol.model.messages.appllication.RegisterMessage;
@@ -126,6 +127,7 @@ import static cc.blynk.server.core.protocol.enums.Command.SHARING;
 import static cc.blynk.server.core.protocol.enums.Command.SMS;
 import static cc.blynk.server.core.protocol.enums.Command.TWEET;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_ACCOUNT;
+import static cc.blynk.server.core.protocol.enums.Command.MASQUERADE;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_APP;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_DASH;
 import static cc.blynk.server.core.protocol.enums.Command.UPDATE_DEVICE;
@@ -279,6 +281,8 @@ public final class MessageFactory {
                 return new DeleteAppMessage(messageId, body);
             case UPDATE_ACCOUNT :
                 return new UpdateAccountMessage(messageId, body);
+            case MASQUERADE :
+                return new MasqueradeMessage(messageId, body);
             case GET_PROJECT_BY_TOKEN :
                 return new GetProjectByTokenStringMessage(messageId, body);
             case EMAIL_QR :
