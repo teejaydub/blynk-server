@@ -96,16 +96,22 @@ public class AppLoginHandler extends SimpleChannelInboundHandler<LoginMessage>
         OsType osType = messageParts.length > 3 ? OsType.parse(messageParts[2]) : OsType.OTHER;
         String version = messageParts.length > 3 ? messageParts[3] : null;
 
-        if (messageParts.length == 5) {
+        if (messageParts.length >= 5) {
             if (AppNameUtil.FACEBOOK.equals(messageParts[4])) {
                 facebookLogin(ctx, message.id, email, messageParts[1], osType, version);
             } else {
+                // Blynk login, with optional masquerade user.
                 String appName = messageParts[4];
-                blynkLogin(ctx, message.id, email, messageParts[1], osType, version, appName);
+                if (messageParts.length >= 6) {
+                    String masqueradeUser = messageParts[5];
+                    blynkLogin(ctx, message.id, email, messageParts[1], osType, version, appName, masqueradeUser);
+                } else {
+                    blynkLogin(ctx, message.id, email, messageParts[1], osType, version, appName, null);
+                }
             }
         } else {
             //todo this is for back compatibility
-            blynkLogin(ctx, message.id, email, messageParts[1], osType, version, AppNameUtil.BLYNK);
+            blynkLogin(ctx, message.id, email, messageParts[1], osType, version, AppNameUtil.BLYNK, null);
         }
     }
 
@@ -157,7 +163,7 @@ public class AppLoginHandler extends SimpleChannelInboundHandler<LoginMessage>
     }
 
     private void blynkLogin(ChannelHandlerContext ctx, int msgId, String email, String pass,
-                            OsType osType, String version, String appName) {
+                            OsType osType, String version, String appName, String masqueradeUserName) {
         User user = holder.userDao.getByName(email, appName);
 
         if (user == null) {
@@ -176,6 +182,26 @@ public class AppLoginHandler extends SimpleChannelInboundHandler<LoginMessage>
             log.warn("User '{}' credentials are wrong. {}", email, ctx.channel().remoteAddress());
             ctx.writeAndFlush(makeResponse(msgId, USER_NOT_AUTHENTICATED), ctx.voidPromise());
             return;
+        }
+
+        // The controlling user has been authenticated.
+        // Are they trying to masquerade as another user?
+        if (masqueradeUserName != null) {
+            // Do they have permission?
+            if (user.profile == null || user.profile.subscription == null
+                || !user.profile.subscription.canMasquerade) {
+                log.warn("User '{}' is not permitted to masquerade. {}", email, ctx.channel().remoteAddress());
+                ctx.writeAndFlush(makeResponse(msgId, USER_NOT_AUTHENTICATED), ctx.voidPromise());
+                return;
+            }
+
+            // Substitute the masquerade user for the controlling user, and continue with that user.
+            user = holder.userDao.getByName(masqueradeUserName, appName);
+            if (user == null) {
+                log.warn("Can't masquerade as nonexistent user '{}'.", masqueradeUserName);
+                ctx.writeAndFlush(makeResponse(msgId, USER_NOT_REGISTERED), ctx.voidPromise());
+                return;
+            }
         }
 
         login(ctx, msgId, user, osType, version);
