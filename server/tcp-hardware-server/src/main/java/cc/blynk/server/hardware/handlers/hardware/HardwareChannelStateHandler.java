@@ -109,6 +109,7 @@ public class HardwareChannelStateHandler extends ChannelInboundHandlerAdapter {
         } else {
             //delayed notification
             //https://github.com/blynkkk/blynk-server/issues/493
+            HardwareChannelStateHandler.log.debug("Scheduling notification for device: {}", device);
             ctx.executor().schedule(new DelayedPush(device, session, user, notification,
                 message, dashBoard, eventorProcessor),
                     notification.notifyWhenOfflineIgnorePeriod, TimeUnit.MILLISECONDS);
@@ -139,18 +140,23 @@ public class HardwareChannelStateHandler extends ChannelInboundHandlerAdapter {
         @Override
         public void run() {
             final long now = System.currentTimeMillis();
-            if (device.status == Status.OFFLINE
-                    && now - device.disconnectTime >= notification.notifyWhenOfflineIgnorePeriod) {
+            if (device.status == Status.OFFLINE) {
+                if (now - device.disconnectTime >= notification.notifyWhenOfflineIgnorePeriod) {
+                    HardwareChannelStateHandler.log.debug("Delayed offline set with device: {}", device);
 
-                HardwareChannelStateHandler.log.debug("Delayed offline set with device: {}", device);
+                    notification.push(gcmWrapper,
+                            message,
+                            dashBoard.id
+                    );
 
-                notification.push(gcmWrapper,
-                        message,
-                        dashBoard.id
-                );
-
-                OfflineFlagLogic.setOffline(notification, dashBoard,
-                    device, user, session, eventorProcessor, true);
+                    OfflineFlagLogic.setOffline(notification, dashBoard,
+                        device, user, session, eventorProcessor, true);
+                } else {
+                    HardwareChannelStateHandler.log.debug("Device {} only offline for {}", device,
+                        now - device.disconnectTime);
+                }
+            } else {
+                HardwareChannelStateHandler.log.debug("Device {} no longer offline.", device);
             }
         }
     }

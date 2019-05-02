@@ -29,7 +29,7 @@ public final class OfflineFlagLogic {
         String newStateString = newState ? "1" : "0";
 
         if (notification.offlineFlagPin != 0) {
-            log.trace("Setting the offline flag pin to {}", newStateString);
+            log.debug("Setting the offline flag pin to {}", newStateString);
             long now = System.currentTimeMillis();
 
             dashBoard.update(device.id, notification.offlineFlagPin, PinType.VIRTUAL, newStateString, now);
