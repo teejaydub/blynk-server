@@ -109,7 +109,7 @@ public class DBManager implements Closeable {
         this.cloneProjectDBDao = new CloneProjectDBDao(hikariDataSource);
         this.forwardingTokenDBDao = new ForwardingTokenDBDao(hikariDataSource);
         this.cleanOldReporting = serverProperties.getBoolProperty("clean.reporting");
-        this.enableReporting = serverProperties.getBoolProperty("enable.db.reporting.data");
+        this.enableReporting = serverProperties.getBoolProperty("save.reporting.data");
 
         checkDBVersion();
 
