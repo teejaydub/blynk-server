@@ -44,6 +44,7 @@ public class DBManager implements Closeable {
 
     private final BlockingIOProcessor blockingIOProcessor;
     private final boolean cleanOldReporting;
+    private final boolean enableReporting;
 
     public UserDBDao userDBDao;
     ReportingDBDao reportingDBDao;
@@ -64,6 +65,7 @@ public class DBManager implements Closeable {
             log.info("Separate DB storage disabled.");
             this.ds = null;
             this.cleanOldReporting = false;
+            this.enableReporting = false;
             return;
         }
 
@@ -77,6 +79,7 @@ public class DBManager implements Closeable {
             log.warn("No {} file found. Separate DB storage disabled.", propsFilename);
             this.ds = null;
             this.cleanOldReporting = false;
+            this.enableReporting = false;
             return;
         }
 
@@ -93,6 +96,7 @@ public class DBManager implements Closeable {
             log.error("Not able connect to DB. Skipping. Reason : {}", e.getMessage());
             this.ds = null;
             this.cleanOldReporting = false;
+            this.enableReporting = false;
             return;
         }
 
@@ -105,6 +109,7 @@ public class DBManager implements Closeable {
         this.cloneProjectDBDao = new CloneProjectDBDao(hikariDataSource);
         this.forwardingTokenDBDao = new ForwardingTokenDBDao(hikariDataSource);
         this.cleanOldReporting = serverProperties.getBoolProperty("clean.reporting");
+        this.enableReporting = serverProperties.getBoolProperty("enable.db.reporting.data");
 
         checkDBVersion();
 
@@ -150,13 +155,13 @@ public class DBManager implements Closeable {
     }
 
     public void insertStat(String region, Stat stat) {
-        if (isDBEnabled()) {
+        if (isDBEnabled() && enableReporting) {
             reportingDBDao.insertStat(region, stat);
         }
     }
 
     public void insertReporting(Map<AggregationKey, AggregationValue> map, GraphGranularityType graphGranularityType) {
-        if (isDBEnabled() && map.size() > 0) {
+        if (isDBEnabled() && enableReporting && map.size() > 0) {
             blockingIOProcessor.executeDB(() -> reportingDBDao.insert(map, graphGranularityType));
         }
     }
@@ -168,7 +173,7 @@ public class DBManager implements Closeable {
     }
 
     public void cleanOldReportingRecords(Instant now) {
-        if (isDBEnabled() && cleanOldReporting) {
+        if (isDBEnabled() && enableReporting && cleanOldReporting) {
             blockingIOProcessor.executeDB(() -> reportingDBDao.cleanOldReportingRecords(now));
         }
     }
