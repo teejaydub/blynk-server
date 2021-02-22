@@ -76,7 +76,8 @@ public class UserDao {
         }
 
         return users.values().stream().filter(user -> (user.email.contains(name)
-                || (user.profile.account.contains(name)))
+                || (user.profile != null && user.profile.account != null
+                    && user.profile.account.contains(name)))
                 && (appName == null || user.appName.equals(appName))).collect(Collectors.toList());
     }
 
