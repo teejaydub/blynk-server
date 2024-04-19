@@ -11,6 +11,7 @@ import cc.blynk.utils.StringUtils;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.traffic.ChannelTrafficShapingHandler;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,10 +38,12 @@ public class BlynkInternalLogic {
 
     private final OTAManager otaManager;
     private final int hardwareIdleTimeout;
+    private final String throttleBoardType;
 
-    public BlynkInternalLogic(OTAManager otaManager, int hardwareIdleTimeout) {
+    public BlynkInternalLogic(OTAManager otaManager, int hardwareIdleTimeout, String throttleBoardType) {
         this.otaManager = otaManager;
         this.hardwareIdleTimeout = hardwareIdleTimeout;
+        this.throttleBoardType = throttleBoardType;
     }
 
     public void messageReceived(ChannelHandlerContext ctx, HardwareStateHolder state, StringMessage message) {
@@ -98,6 +101,17 @@ public class BlynkInternalLogic {
             otaManager.initiateHardwareUpdate(ctx, state.userKey, hardwareInfo, dashBoard, device);
             device.hardwareInfo = hardwareInfo;
             dashBoard.updatedAt = System.currentTimeMillis();
+
+            if (this.throttleBoardType.isEmpty()
+                || !hardwareInfo.boardType.equals(this.throttleBoardType)) {
+                try {
+                    log.trace("Removing throttle for boardType '{}'.",
+                        hardwareInfo.boardType, this.throttleBoardType);
+                    ctx.pipeline().remove(ChannelTrafficShapingHandler.class);
+                } catch (Exception e) {
+                    log.debug("Couldn't remove channel throttle.");
+                }
+            }
         }
 
         ctx.writeAndFlush(ok(msgId), ctx.voidPromise());

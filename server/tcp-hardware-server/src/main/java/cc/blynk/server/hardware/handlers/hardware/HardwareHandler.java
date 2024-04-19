@@ -58,7 +58,8 @@ public class HardwareHandler extends BaseSimpleChannelInboundHandler<StringMessa
                 holder.twitterWrapper, holder.limits.notificationPeriodLimitSec);
         this.smsLogic = new SmsLogic(holder.smsWrapper, holder.limits.notificationPeriodLimitSec);
         this.propertyLogic = new SetWidgetPropertyLogic(holder.sessionDao);
-        this.info = new BlynkInternalLogic(holder.otaManager, holder.limits.hardwareIdleTimeout);
+        this.info = new BlynkInternalLogic(holder.otaManager, holder.limits.hardwareIdleTimeout,
+                holder.props.getProperty("net.throttleBoardType", ""));
 
         this.state = stateHolder;
     }
