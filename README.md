@@ -11,6 +11,7 @@ Key additions:
 * Subscription support, where users must have an active subscription to use their account (reliant on external management code)
 * Adding additional **account info** to user profiles
 * [Throttling SSL traffic to embedded clients](https://github.com/teejaydub/blynk-server/commit/a72ebcecc3283fbd358d1577e242e0f018661a4e)
+  and limiting that to only certain [board types](https://github.com/teejaydub/blynk-server/commit/d062ffa48fa2bccd831ef276a913fae3afb76e1b)
 * [Decoupling graph data from widgets](https://github.com/teejaydub/blynk-server/commit/08855c0da2cc81adb6044f0300bfcdffe5cc17aa)
 * [Scripts](https://github.com/teejaydub/blynk-server/commit/0e18daeccda794bc7a948a8b01922c9a03a5a885) to facilitate transferring users to a new server
 * Tweaks for Admin view: sort Boolean fields, filter by account info
