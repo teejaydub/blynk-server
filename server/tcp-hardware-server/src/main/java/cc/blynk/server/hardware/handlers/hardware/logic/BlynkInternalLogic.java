@@ -38,12 +38,12 @@ public class BlynkInternalLogic {
 
     private final OTAManager otaManager;
     private final int hardwareIdleTimeout;
-    private final String throttleBoardType;
+    private final String noThrottleBoardType;
 
-    public BlynkInternalLogic(OTAManager otaManager, int hardwareIdleTimeout, String throttleBoardType) {
+    public BlynkInternalLogic(OTAManager otaManager, int hardwareIdleTimeout, String noThrottleBoardType) {
         this.otaManager = otaManager;
         this.hardwareIdleTimeout = hardwareIdleTimeout;
-        this.throttleBoardType = throttleBoardType;
+        this.noThrottleBoardType = noThrottleBoardType;
     }
 
     public void messageReceived(ChannelHandlerContext ctx, HardwareStateHolder state, StringMessage message) {
@@ -102,11 +102,11 @@ public class BlynkInternalLogic {
             device.hardwareInfo = hardwareInfo;
             dashBoard.updatedAt = System.currentTimeMillis();
 
-            if (this.throttleBoardType.isEmpty()
-                || !hardwareInfo.boardType.equals(this.throttleBoardType)) {
+            if (!this.noThrottleBoardType.isEmpty()
+                && hardwareInfo.boardType.equals(this.noThrottleBoardType)) {
                 try {
                     log.trace("Removing throttle for boardType '{}'.",
-                        hardwareInfo.boardType, this.throttleBoardType);
+                        hardwareInfo.boardType, this.noThrottleBoardType);
                     ctx.pipeline().remove(ChannelTrafficShapingHandler.class);
                 } catch (Exception e) {
                     log.debug("Couldn't remove channel throttle.");
