@@ -43,7 +43,7 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.kenglxn.qrgen</groupId>
+            <groupId>com.github.kenglxn.QRGen</groupId>
             <artifactId>javase</artifactId>
             <version>${qrgen.version}</version>
         </dependency>

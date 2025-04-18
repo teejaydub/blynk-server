@@ -4,7 +4,8 @@
  * Created on 30.09.17.
  */
 module cc.blynk.utils {
-    requires log4j.api;
+    requires org.apache.commons.io;
+    requires org.apache.logging.log4j.core;
 
     exports cc.blynk.utils;
     exports cc.blynk.utils.properties;
