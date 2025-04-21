@@ -54,7 +54,7 @@ public class BlynkInternalLogicTest {
 
     @Test
     public void testCorrectBehavior() {
-        BlynkInternalLogic logic = new BlynkInternalLogic(otaManager, props.getIntProperty("hard.socket.idle.timeout", 0));
+        BlynkInternalLogic logic = new BlynkInternalLogic(otaManager, props.getIntProperty("hard.socket.idle.timeout", 0), "");
 
         when(ctx.pipeline()).thenReturn(pipeline);
         when(ctx.alloc()).thenReturn(allocator);
