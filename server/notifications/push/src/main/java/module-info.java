@@ -15,4 +15,8 @@ module cc.blynk.server.notifications.push {
     exports cc.blynk.server.notifications.push.android;
     exports cc.blynk.server.notifications.push.enums;
     exports cc.blynk.server.notifications.push.ios;
+
+    // For testing
+    opens cc.blynk.server.notifications.push.ios to com.fasterxml.jackson.databind;
+    opens cc.blynk.server.notifications.push.android to com.fasterxml.jackson.databind;
 }
