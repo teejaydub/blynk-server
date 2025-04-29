@@ -13,3 +13,4 @@ dependency-reduced-pom.xml
 # Temp files for testing
 cookies
 test.json
+server/core/blynk.log.*
