@@ -114,6 +114,7 @@ public class ResetPasswordLogic extends BaseHttpHandler {
         blockingIOProcessor.execute(() -> {
             Response response;
             try {
+                // mailWrapper.sendHtml(trimmedEmail, "Password reset request for " + appName + ".", message);
                 mailWrapper.sendHtml(trimmedEmail, "Password reset request for CoolBot Pro.", message);
                 log.info("{} mail sent.", trimmedEmail);
                 response = ok("Email was sent.");

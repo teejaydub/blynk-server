@@ -75,7 +75,7 @@ public class HttpResetPassTest extends BaseTest {
             assertEquals("Email was sent.", data);
         }
 
-        verify(mailWrapper).sendHtml(eq(email), eq("Password reset request for Blynk app."), contains("/landing?token="));
+        verify(mailWrapper).sendHtml(eq(email), eq("Password reset request for CoolBot Pro."), contains("/landing?token="));
     }
 
 

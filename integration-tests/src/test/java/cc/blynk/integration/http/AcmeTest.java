@@ -17,6 +17,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.times;
@@ -64,19 +66,23 @@ public class AcmeTest extends BaseTest {
     public void testCreateCertificates() throws Exception {
         final String STAGING = "acme://letsencrypt.org/staging";
         ContentHolder contentHolder = holder2.sslContextHolder.contentHolder;
+        assertEquals(contentHolder.content, "");
         AcmeClient acmeClient = new AcmeClient(STAGING, "test@blynk.cc", "test.blynk.cc", contentHolder);
-        assertTrue(acmeClient.requestCertificate());
+        acmeClient.requestCertificate();
+        assertNotEquals(contentHolder.content, "");
     }
 
     @Test
     @Ignore
     public void testWorker() throws Exception {
         AcmeClient acmeClient = Mockito.mock(AcmeClient.class);
-        CertificateRenewalWorker certificateRenewalWorker = new CertificateRenewalWorker(acmeClient, 7);
+        // SslContextHolder sslContextHolder = Mockito.mock(SslContextHolder.class);
+        SslContextHolder sslContextHolder = holder2.sslContextHolder;
+        CertificateRenewalWorker certificateRenewalWorker = new CertificateRenewalWorker(sslContextHolder);
         certificateRenewalWorker.run();
         verify(acmeClient, times(0)).requestCertificate();
 
-        certificateRenewalWorker = new CertificateRenewalWorker(acmeClient, 100);
+        certificateRenewalWorker = new CertificateRenewalWorker(sslContextHolder);
         certificateRenewalWorker.run();
         verify(acmeClient, times(1)).requestCertificate();
     }
