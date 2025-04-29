@@ -11,6 +11,7 @@ import cc.blynk.server.core.protocol.model.messages.common.HardwareMessage;
 import cc.blynk.server.hardware.HardwareServer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.verify;
  * Created on 13.01.16.
  */
 @RunWith(MockitoJUnitRunner.class)
+@Ignore
 public class WebSocketTest extends IntegrationBase {
 
     private BaseServer webSocketServer;

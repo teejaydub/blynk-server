@@ -74,9 +74,7 @@ public final class WebSocketClient extends BaseClient {
         if (data != null) {
             bb.writeBytes(data);
         }
-        BinaryWebSocketFrame result = new BinaryWebSocketFrame(bb);
-        bb.release();
-        return result;
+        return new BinaryWebSocketFrame(bb);
     }
 
     @Override
