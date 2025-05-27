@@ -1,6 +1,6 @@
 ## Fork note
 
-This is Timothy Weber's personal fork of Blynk's original server.  It carries the 0.* version history forward, adding features I needed.
+This is Timothy Weber's personal fork of Blynk's original server.  It carries the 0.* version history forward, adding features I needed.  Since it's forked, version numbers are now in the 10.*.* line.
 
 Key additions:
 
