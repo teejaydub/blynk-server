@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
 
@@ -78,7 +80,7 @@ public class ReportingDataCleanerTest {
 
         ReportingDataCleaner.main(new String[] {reportingPath.toString()});
 
-        assertEquals(11520, Files.size(userFile));
+        assertEquals(16 * 720, Files.size(userFile));
 
         ByteBuffer userReportingData = FileUtils.read(Paths.get(userPath.toString(), "123_minute.bin"), 360);
         userReportingData.flip();
@@ -88,6 +90,23 @@ public class ReportingDataCleanerTest {
             assertEquals(i, (int) value);
             assertEquals(ts, i);
         }
+    }
+
+    @Test
+    public void testRemoveOldFile() throws Exception {
+        Path userFile = Paths.get(userPath.toString(), "123_minute.bin");
+        int count = 100;
+        fillWithData(userFile, count);
+
+        // Don't remove a file we just created.
+        ReportingDataCleaner.main(new String[] {reportingPath.toString()});
+        assertEquals(true, Files.exists(userFile));
+
+        // Do remove a file that's a year old.
+        Files.setLastModifiedTime(userFile,
+            FileTime.from(Instant.now().minusSeconds(60 * 60 * 24 * 365)));
+        ReportingDataCleaner.main(new String[] {reportingPath.toString()});
+        assertEquals(false, Files.exists(userFile));
     }
 
 
