@@ -10,6 +10,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 
 /**
  * The Blynk Project.
@@ -31,28 +33,26 @@ public final class ReportingDataCleaner {
             System.out.println("Starting processing " + reportingPath.toString());
             start(reportingPath);
         } else {
-            System.err.println(reportingPath.toString() + " not exists.");
+            System.err.println(reportingPath.toString() + " doesn't exist.");
         }
     }
 
     private static void start(Path reportingPath) {
+        int dayCount = 32;  // storing daily data for this many days
+        int hourCount = 24 * dayCount;
+        int minuteCount = 60 * hourCount;
+        int secondsCount = 60 * minuteCount;
+
+        FileTime oldestTimeToKeep = FileTime.from(Instant.now().minusSeconds(secondsCount));
+        long oldestFileMillisToKeep = oldestTimeToKeep.toMillis();
+
         File[] allReporting = reportingPath.toFile().listFiles();
         if (allReporting == null || allReporting.length == 0) {
             System.err.println("No files.");
             return;
         }
 
-        System.out.println("Directories number : " + allReporting.length);
-
-        // Testing:
-        // int dayCount = 2;  // storing daily data for this many days
-        // int hourCount = 24 * dayCount;  // storing hourly data for the same as daily
-        // int minuteCount = 24 * 60 * 2; // storing minute points for fewer days
-
-        // Production:
-        int dayCount = 180;  // storing daily data for this many days
-        int hourCount = 24 * dayCount;  // storing hourly data for the same as daily
-        int minuteCount = 24 * 60 * 32; // storing minute points for fewer days
+        System.out.println("Directory count: " + allReporting.length);
 
         for (File userDirectory : allReporting) {
             if (userDirectory.isDirectory()) {
@@ -72,7 +72,9 @@ public final class ReportingDataCleaner {
                     if (filesCount != 0 && filesCount % 1000 == 0) {
                         System.out.println("Visited " + filesCount + " files.");
                     }
-                    if (file.getPath().endsWith("minute.bin")) {
+                    if (deleteFileIfTooOld(file, oldestFileMillisToKeep)) {
+                        System.out.println("Deleted " + file.getPath() + "; too old.");
+                    } else if (file.getPath().endsWith("minute.bin")) {
                         truncateFileIfAbove(file, minuteCount);
                     } else if (file.getPath().endsWith("hourly.bin")) {
                         truncateFileIfAbove(file, hourCount);
@@ -84,6 +86,17 @@ public final class ReportingDataCleaner {
         }
 
         System.out.println("Visited files: " + filesCount + ".  Truncated files: " + overrideCount);
+    }
+
+    private static boolean deleteFileIfTooOld(File file, long oldestFileMillisToKeep) {
+        if (file.lastModified() < oldestFileMillisToKeep) {
+            if (file.delete()) {
+                return true;
+            } else {
+                System.err.println("Couldn't delete " + file.getPath() + ".");
+            }
+        }
+        return false;
     }
 
     private static void truncateFileIfAbove(File file, int limit) {
